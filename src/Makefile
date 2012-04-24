@@ -28,11 +28,14 @@ default: $(OUT) $(OUT_NO)
 .cpp.o:
 	$(CCC) $(INCLUDES) $(CCFLAGS) -c $< -o $@
 
-$(OUT): $(OBJ)
+$(OUT): $(OBJ) libdir
 	ar rcs $(OUT) $(OBJ)
 
-$(OUT_NO): $(OBJ_NO)
+$(OUT_NO): $(OBJ_NO) libdir
 	ar rcs $(OUT_NO) $(OBJ_NO)
+
+libdir:
+	mkdir -p ../lib
 
 clean:
 	rm -f $(OBJ) $(OUT) $(OBJ_NO) $(OUT_NO)

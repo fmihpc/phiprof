@@ -23,39 +23,171 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "vector"
 #include "mpi.h"
 
+
+/* This files contains the C++ interface */
+
 namespace phiprof
 {
-   //initialize a timer, with a particular label belonging to some groups    
-   //returns id of new timer. If timer exists, then that id is returned.
-   int initializeTimer(const std::string &label);
-   int initializeTimer(const std::string &label,const std::string &group1);
-   int initializeTimer(const std::string &label,const std::string &group1,const std::string &group2);
-   int initializeTimer(const std::string &label,const std::string &group1,const std::string &group2,const std::string &group3);
-   int initializeTimer(const std::string &label,const std::vector<std::string> &groups);
 
-
-   //get id number of a timer, return -1 if it does not exist
-   int getId(const std::string &label);
-   
-   //Start a profiling block with a certain label
-   //If timer does not exist, then it is created
-   bool start(const std::string &label);
-   //start a profiling block with a certain id
-   bool start(int id);
-
-   //stop a profiling block with a certain label
-   bool stop (const std::string &label,
+  /**
+   * Start a profiling timer.
+   *
+   * This function starts a timer with a certain label (name). If
+   * timer does not exist, then it is created. The timer is
+   * automatically started in the current active location in the tree
+   * of timers. Thus the same start command in the code can start
+   * different timers, if the current active timer is different.
+   *
+   * @param label
+   *   Name for the timer to be start. 
+   * @return
+   *   Returns true if timer started successfully.
+   */
+  bool start(const std::string &label);
+  /**
+   * Stop a profiling timer.
+   *
+   * This function stops a timer with a certain label (name). The
+   * label has to match the currently last opened timer. One can also
+   * (optionally) report how many workunits was done during this
+   * start-stop timed segment, e.g. GB for IO routines, Cells for
+   * grid-based solvers. Note, all stops for a particular timer has to
+   * report workunits, otherwise the workunits will not be reported.
+   *
+   * @param label 
+   *   Name for the timer to be stopped.     
+   * @param workunits 
+   *   (optional) Default is for no workunits to be
+   *   collected.Amount of workunits that was done during this timer
+   *   segment. If value is negative, then no workunit statistics will
+   *   be collected.
+   * @param workUnitLabel
+   *   (optional) Name describing the unit of the workunits, e.g. "GB", "Flop", "Cells",...
+   * @return
+   *   Returns true if timer stopped successfully.
+   */
+  bool stop (const std::string &label,
               double workUnits=-1.0,
               const std::string &workUnitLabel="");
-   //stop a profiling block with a certain id
+  /**
+   * Print the  current timer state in a human readable file
+   *
+   * This function will print the timer statistics in a text based
+   * hierarchical form into file(s), each unique set of hierarchical
+   * profiles (labels, hierarchy, workunits) will be written out to a
+   * separate file. This function will print the times since the
+   * ininitalization of phiprof in the first start call. It can be
+   * called multiple times, and will not close currently active
+   * timers. The time spent in active timers uptill the print call is
+   * taken into account, and the time spent in the print function will
+   * be corrected for in them.
+   *
+   *
+   * @param comm
+   *   Communicator for processes that print their profile.
+   * @param fileNamePrefix
+   *   (optional) Default value is "profile"
+   *   The first part of the filename where the profile is printed. Each
+   *   unique set of timers (label, hierarchy, workunits) will be
+   *   assigned a unique hash number and the profile will be written
+   *   out into a file called fileprefix_hash.txt
+   * @param minFraction
+   *   (optional) Default value is to print all timers
+   *   minFraction can be used to filter the timers being printed so
+   *   that only the ones with a meaningfull amount of time are
+   *   printed. Only timers with (timer time)/(total time)>=minFraction
+   *   are printed. If minfraction is <=0.0 then all timers are printed.
+   * @return
+   *   Returns true if pofile printed successfully.
+   */
+  
+  bool print(MPI_Comm comm,std::string fileNamePrefix="profile",double minFraction=0.0);
+  
+    /**
+   * Print the current timer state in a easily parsable format
+   *
+   * This function will print the timer statistics in a text based
+   * parsable format, each unique set of hierarchical profiles
+   * (labels, hierarchy, workunits) will be written out to a separate
+   * file. This function will print the times since the last call to
+   * printLogProfile, or since initialization for the first call to
+   * printLogProfile. It is meant to be called multiple times, to
+   * track the develpoment of performance metrics. 
+   *
+   *
+   * @param comm
+   *   Communicator for processes that print their profile.
+   * @param fileNamePrefix
+   *   (optional) Default value is "profile_log"
+   *   The first part of the filename where the profile is printed. Each
+   *   unique set of timers (label, hierarchy, workunits) will be
+   *   assigned a unique hash number and the profile will be written
+   *   out into a file called fileprefix_hash.txt
+   * @param separator
+   *   (optional) Default value is " "
+   *   The separator between fields in the file.
+   * @param maxLevel
+   *   (optional) Default value is to print all timers
+   *   Maxlevel can be used to limit the number of timers that are
+   *   printed out. Only timers with a level in the
+   *   hierarchy<=maxLevel are printed.
+   * @return
+   *   Returns true if pofile printed successfully.
+   */
+  bool printLogProfile(MPI_Comm comm,double simulationTime,std::string fileNamePrefix="profile_log",std::string separator=" ",int maxLevel=0);
+
+  /**
+   * Initialize a timer, with a particular label   
+   *
+   * Initialize a timer. This enables one to define groups, and to use
+   * the return id value for more efficient starts/stops in tight
+   * loops. If this function is called for an existing timer it will
+   * simply just return the id.
+   *
+   *
+   * @param label
+   *   Name for the timer to be created. This will not yet start the timer, that has to be done separately with a start. 
+   * @param groups
+   *   The groups to which this timer belongs. Groups can be used combine times for different timers to logical groups, e.g., MPI, io, compute...
+   * @return
+   *   The id of the timer
+   */
+   int initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+  /**
+   * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+   */
+   int initializeTimer(const std::string &label);
+  /**
+   * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+   */
+   int initializeTimer(const std::string &label,const std::string &group1);
+  /**
+   * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+   */
+   int initializeTimer(const std::string &label,const std::string &group1,const std::string &group2);
+  /**
+   * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+   */
+   int initializeTimer(const std::string &label,const std::string &group1,const std::string &group2,const std::string &group3);
+
+
+
+  
+   int getId(const std::string &label);
+   
+  /*
+   * \overload bool phiprof::start(const std::string &label)
+   */
+   bool start(int id);
+
+   /**
+   * \overload  bool phiprof::stop(const std::string &label,double workUnits=-1.0,const std::string &workUnitLabel="")
+   */
    bool stop (int id,
               double workUnits=-1.0,
               const std::string &workUnitLabel="");
 
-   bool print(MPI_Comm comm,std::string fileNamePrefix="profile",double minFraction=0.0);
 
-//print in a log format   (will append) 
-   bool printLogProfile(MPI_Comm comm,double simulationTime,std::string fileNamePrefix="profile_log",std::string separator=" ",int maxLevel=0);
 }
 
 

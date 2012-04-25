@@ -19,6 +19,10 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #ifndef PHIPROF_H
 #define PHIPROF_H
 
+/* This files contains the C interface, see phiprof.hpp (C++
+ *  interface) for documentation of the various functions.
+*/
+
 int phiprof_initializeTimer(char *label,int nGroups, ... );
 int phiprof_getId(char *label);
 

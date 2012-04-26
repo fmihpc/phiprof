@@ -512,7 +512,8 @@ namespace phiprof
                   //other label has no groups
                   for (vector<string>::const_iterator group = timers[id].groups.begin();
                        group != timers[id].groups.end(); ++group) {
-		    output << setw(1) << groupIds.count(*group) ? groupIds.find(*group)->second : std::string();
+		    string groupId=groupIds.count(*group) ? groupIds.find(*group)->second : std::string();
+		    output << setw(1) << groupId;
 		    hasNoGroups = false;
                   }
                }
@@ -625,16 +626,17 @@ namespace phiprof
 
          for(unsigned int i=0;i<groupStats.name.size();i++){            
             if(minFraction<=groupStats.timeTotalFraction[i]){
-               output << setw(_levelWidth+1) << " ";
-	       output << setw(groupWidth+1) << groupIds.count(groupStats.name[i]) ? groupIds.find(groupStats.name[i])->second : std::string();
-	       output << setw(labelWidth+1) << groupStats.name[i];
-	       output << setw(_floatWidth) << groupStats.timeSum[i]/nProcesses;
-	       output << setw(_floatWidth) << 100.0*groupStats.timeTotalFraction[i];
-	       output << setw(_floatWidth) << groupStats.timeMax[i].val;
-	       output << setw(_intWidth)   << groupStats.timeMax[i].rank;
-	       output << setw(_floatWidth) << groupStats.timeMin[i].val;
-	       output << setw(_intWidth)   << groupStats.timeMin[i].rank;
-	       output << endl;
+	      string groupId= groupIds.count(groupStats.name[i]) ? groupIds.find(groupStats.name[i])->second : std::string();
+	      output << setw(_levelWidth+1) << " ";
+	      output << setw(groupWidth+1) << groupId;
+	      output << setw(labelWidth+1) << groupStats.name[i];
+	      output << setw(_floatWidth) << groupStats.timeSum[i]/nProcesses;
+	      output << setw(_floatWidth) << 100.0*groupStats.timeTotalFraction[i];
+	      output << setw(_floatWidth) << groupStats.timeMax[i].val;
+	      output << setw(_intWidth)   << groupStats.timeMax[i].rank;
+	      output << setw(_floatWidth) << groupStats.timeMin[i].val;
+	      output << setw(_intWidth)   << groupStats.timeMin[i].rank;
+	      output << endl;
 	    }
          }
 
@@ -766,10 +768,10 @@ namespace phiprof
                output<<endl;
                
                for(unsigned int i=0;i<groupStats.name.size();i++){            
+		 string groupId=groupIds.count(groupStats.name[i]) ? groupIds.find(groupStats.name[i])->second : std::string();
                   output <<"#";
                   output << setw(6) << column;
-                  output << setw(2) << groupIds.count(groupStats.name[i]) ? groupIds.find(groupStats.name[i])->second : std::string();
-		  output << " ";
+                  output << setw(2) << groupId<<" ";
                   output << groupStats.name[i];
                   output << endl;
                   column+=6;
@@ -793,8 +795,9 @@ namespace phiprof
                         //other label has no groups
                         for (vector<string>::const_iterator group = timers[id].groups.begin();
                              group != timers[id].groups.end(); ++group) {
-                           output << setw(2) << groupIds.count(*group) ? groupIds.find(*group)->second : std::string();
-                           hasNoGroups = false;
+			  string groupId=groupIds.count(*group) ? groupIds.find(*group)->second : std::string();
+			  output << setw(2) << groupId;
+			  hasNoGroups = false;
                         }
                      }
                      

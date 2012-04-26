@@ -1,5 +1,8 @@
 Phiprof – Parallel Hierarchical Profiler
 
+Copyright (c) 2011,2012 Finnish Meteorological Institute
+Author: Sebastian von Alfthan (sebastian.von.alfthan at fmi.fi)
+
 Phiprof a simple library that can be used to profile parallel MPI
 programs developed at the Finnish Meteorological Institute. It can be
 used to produce a hierarchical report of time (average, max, min)

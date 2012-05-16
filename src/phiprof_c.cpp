@@ -20,10 +20,10 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 #include "phiprof.hpp"
+#include <stdio.h>
+#include <stdarg.h>
 
 using namespace std;
-
-
 
 
 extern "C" int phiprof_initializeTimer(char *label,int nGroups, ... ){

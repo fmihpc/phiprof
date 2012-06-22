@@ -138,6 +138,36 @@ namespace phiprof
          }
       }
 
+      //get full hierarchical name for a timer
+      //can have either the timer-label first (reverse order), or last.
+      string getFullLabel(const vector<TimerData> &timers,int id,bool reverse=false){
+         //create a label with all hierarchical levels     
+         std::vector<string> labels;
+         while(id>0){
+            labels.push_back(_cumulativeTimers[id].label);
+            id=_cumulativeTimers[id].parentId;
+         }
+         
+         string fullLabel;
+         if(reverse){
+            vector<string>::iterator it;
+            for ( it=labels.begin() ; it != labels.end(); ++it ){
+               fullLabel+=*it;
+               fullLabel+="\\";   
+            }
+         }
+         else{
+            vector<string>::reverse_iterator rit;
+            for ( rit=labels.rbegin() ; rit != labels.rend(); ++rit ){
+               fullLabel+="/";
+               fullLabel+=*rit;
+            }
+         }
+
+         
+         return fullLabel;
+      }
+      
 ////-------------------------------------------------------------------------
 ///  Timer handling functions functions
 ////-------------------------------------------------------------------------            
@@ -965,6 +995,7 @@ namespace phiprof
       vector<string> groups; //empty vector
       return initializeTimer(label,groups);
    }
+
    
    //start timer, with id
    bool start(int id){
@@ -982,7 +1013,7 @@ namespace phiprof
       _logTimers[_currentId].active=true;
       
 #ifdef CRAYPAT
-      PAT_region_begin(_currentId+1,timers[id].label.c_str());
+      PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());
 #endif
       return true;        
    }
@@ -1001,7 +1032,7 @@ namespace phiprof
       _logTimers[_currentId].active=true;
       
 #ifdef CRAYPAT
-      PAT_region_begin(_currentId+1,label.c_str());
+      PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());
 #endif
       return true;        
    }

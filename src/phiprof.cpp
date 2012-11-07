@@ -910,12 +910,13 @@ namespace phiprof
       }
 
       
-      void getPrintCommunicator(int &timersHash,MPI_Comm &printComm, MPI_Comm comm){
+      void getPrintCommunicator(int &printIndex,int &timersHash,MPI_Comm &printComm, MPI_Comm comm){
 
          //hash should be the same for _cumulativeTimers, _logTimers
          timersHash=getTimersHash(_cumulativeTimers);
-
+         
          int result = MPI_Comm_split(comm, timersHash, 0, &printComm);
+         
          if (result != MPI_SUCCESS) {
             int error_string_len = MPI_MAX_ERROR_STRING;
             char error_string[MPI_MAX_ERROR_STRING + 1];
@@ -924,6 +925,21 @@ namespace phiprof
             cerr << "PHIPROF-ERROR: Error splitting communicator for printing: " << error_string << endl;
             abort();
          }
+
+         //Now compute the id for the print comms. First communicatr is given index 0, next 1 and so on.
+         int printCommRank;
+         int printCommSize;
+         //get rank in printComm
+         MPI_Comm_rank(printComm,&printCommRank);
+         MPI_Comm_size(printComm,&printCommSize);
+         //communicator with print comm masters(rank=0)
+         MPI_Comm printCommMasters;
+         MPI_Comm_split(comm,printCommRank==0,-printCommSize,&printCommMasters);
+         MPI_Comm_rank(printCommMasters,&printIndex);
+         MPI_Comm_free(&printCommMasters);
+         
+         MPI_Bcast(&printIndex,1,MPI_INT,0,printComm);
+            
       }
          
 
@@ -999,41 +1015,50 @@ namespace phiprof
    
    //start timer, with id
    bool start(int id){
-      if(_currentId!=_cumulativeTimers[id].parentId){
-	 cerr << "PHIPROF-ERROR: Starting timer that is not a child of the current profiling region" <<endl;
-	 return false;
-      }
-      _currentId=id;      
-      //start timer
-      _cumulativeTimers[_currentId].startTime=getTime();
-      _cumulativeTimers[_currentId].active=true;
+      bool success=true;
+#pragma omp master
+      {
+         if(_currentId!=_cumulativeTimers[id].parentId){
+            cerr << "PHIPROF-ERROR: Starting timer that is not a child of the current profiling region" <<endl;
+            success= false;
+         }
+         else{
+            _currentId=id;      
+            //start timer
+            _cumulativeTimers[_currentId].startTime=getTime();
+            _cumulativeTimers[_currentId].active=true;
 
-      //start log timer
-      _logTimers[_currentId].startTime=_cumulativeTimers[_currentId].startTime;
-      _logTimers[_currentId].active=true;
-      
+            //start log timer
+            _logTimers[_currentId].startTime=_cumulativeTimers[_currentId].startTime;
+            _logTimers[_currentId].active=true;
+         
 #ifdef CRAYPAT
-      PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());
+            PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());
 #endif
-      return true;        
+         }
+      }
+      return success;        
    }
 
    //start timer, with label
    bool start(const string &label){
-      //If the timer exists, then initializeTimer just returns its id, otherwise it is constructed.
-      //Make the timer the current one
-      _currentId=initializeTimer(label);
-      //start timer
-      _cumulativeTimers[_currentId].startTime=getTime();
-      _cumulativeTimers[_currentId].active=true;
+#pragma omp master
+      {
+         //If the timer exists, then initializeTimer just returns its id, otherwise it is constructed.
+         //Make the timer the current one
+         _currentId=initializeTimer(label);
+         //start timer
+         _cumulativeTimers[_currentId].startTime=getTime();
+         _cumulativeTimers[_currentId].active=true;
 
-      //start log timer   
-      _logTimers[_currentId].startTime=_cumulativeTimers[_currentId].startTime;
-      _logTimers[_currentId].active=true;
+         //start log timer   
+         _logTimers[_currentId].startTime=_cumulativeTimers[_currentId].startTime;
+         _logTimers[_currentId].active=true;
       
 #ifdef CRAYPAT
-      PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());
+         PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());
 #endif
+      }
       return true;        
    }
    
@@ -1041,93 +1066,103 @@ namespace phiprof
    bool stop (const string &label,
               const double workUnits,
               const string &workUnitLabel){
-      if(label != _cumulativeTimers[_currentId].label ){
-	 cerr << "PHIPROF-ERROR: label missmatch in profile::stop  when stopping "<< label <<
-            ". The started timer is "<< _cumulativeTimers[_currentId].label<< " at level " << _cumulativeTimers[_currentId].level << endl;
-	 return false;
+      bool success=true;
+#pragma omp master
+      {
+         if(label != _cumulativeTimers[_currentId].label ){
+            cerr << "PHIPROF-ERROR: label missmatch in profile::stop  when stopping "<< label <<
+               ". The started timer is "<< _cumulativeTimers[_currentId].label<< " at level " << _cumulativeTimers[_currentId].level << endl;
+            success=false;
+         }
+         if(success)
+            success=stop(_currentId,workUnits,workUnitLabel);
       }
-
-      stop(_currentId,workUnits,workUnitLabel);
-      return true;
+      return success;
    }
 
    //stop a timer defined by id
    bool stop (int id,
               double workUnits,
               const string &workUnitLabel){
-      
-      double stopTime=getTime();
-      if(id != _currentId ){
-         cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << _cumulativeTimers[_currentId].level << endl;
-	 return false;
-      }
-      
+      bool success=true;
+#pragma omp master
+      {
+         double stopTime=getTime();
+         if(id != _currentId ){
+            cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << _cumulativeTimers[_currentId].level << endl;
+            success=false;
+         }
+
+         else {
+         
 #ifdef CRAYPAT
-      PAT_region_end(_currentId+1);
+            PAT_region_end(_currentId+1);
 #endif  
 
+         
+            //handle workUnits for _cumulativeTimers               
+            if(_cumulativeTimers[_currentId].count!=0){
+               //if this, or a previous, stop did not include work units then do not add them
+               //work units have to be defined for all stops with a certain (full)label
+               if(workUnits<0 || _cumulativeTimers[_currentId].workUnits<0){
+                  _cumulativeTimers[_currentId].workUnits=-1;
+                  _logTimers[_currentId].workUnits=-1;
+               }
+               else{
+                  _cumulativeTimers[_currentId].workUnits+=workUnits;
+               }
+            }
+            else{
+               //firsttime, initialize workUnit stuff here
+               if(workUnits>=0.0 ){
+                  //we have workUnits for this counter
+                  _cumulativeTimers[_currentId].workUnits=workUnits;
+                  _cumulativeTimers[_currentId].workUnitLabel=workUnitLabel;
+               }
+               else{
+                  // no workUnits for this counter
+                  _cumulativeTimers[_currentId].workUnits=-1.0;
+               }
+            }
+            
+            //handle workUnits for _logTimers
+            if(_logTimers[_currentId].count!=0){
+               //if this, or a previous, stop did not include work units then do not add t hem
+               //work units have to be defined for all stops with a certain (full)label
+               if(workUnits<0 || _logTimers[_currentId].workUnits<0){
+                  _logTimers[_currentId].workUnits=-1;
+               }
+               else{
+                  _logTimers[_currentId].workUnits+=workUnits;
+               }
+            }
+            else{
+               //firsttime, initialize workUnit stuff here
+               if(workUnits>=0.0 ){
+                  //we  have workUnits for this counter
+                  _logTimers[_currentId].workUnits=workUnits;
+                  _logTimers[_currentId].workUnitLabel=workUnitLabel;
+               }
+               else{
+                  //  no workUnits for this counter
+                  _logTimers[_currentId].workUnits=-1.0;
+               }
+            }
+            
+         //stop _cumulativeTimers & _logTimers timer              
+            _cumulativeTimers[_currentId].time+=(stopTime-_cumulativeTimers[_currentId].startTime);
+            _cumulativeTimers[_currentId].count++;
+            _cumulativeTimers[_currentId].active=false;
+            _logTimers[_currentId].time+=(stopTime-_logTimers[_currentId].startTime);
+            _logTimers[_currentId].count++;
+            _logTimers[_currentId].active=false;
+            
       
-      //handle workUnits for _cumulativeTimers               
-      if(_cumulativeTimers[_currentId].count!=0){
-	 //if this, or a previous, stop did not include work units then do not add them
-	 //work units have to be defined for all stops with a certain (full)label
-	 if(workUnits<0 || _cumulativeTimers[_currentId].workUnits<0){
-	    _cumulativeTimers[_currentId].workUnits=-1;
-	    _logTimers[_currentId].workUnits=-1;
-	 }
-	 else{
-	    _cumulativeTimers[_currentId].workUnits+=workUnits;
-	 }
+            //go down in hierarchy    
+            _currentId=_cumulativeTimers[_currentId].parentId;
+         }
       }
-      else{
-	 //firsttime, initialize workUnit stuff here
-	 if(workUnits>=0.0 ){
-	    //we have workUnits for this counter
-	    _cumulativeTimers[_currentId].workUnits=workUnits;
-	    _cumulativeTimers[_currentId].workUnitLabel=workUnitLabel;
-	 }
-	 else{
-	    //  no workUnits for this counter
-	    _cumulativeTimers[_currentId].workUnits=-1.0;
-	 }
-      }
-
-      //handle workUnits for _logTimers
-      if(_logTimers[_currentId].count!=0){
-	 //if this, or a previous, stop did not include work units then do not add them
-	 //work units have to be defined for all stops with a certain (full)label
-	 if(workUnits<0 || _logTimers[_currentId].workUnits<0){
-	    _logTimers[_currentId].workUnits=-1;
-	 }
-	 else{
-	    _logTimers[_currentId].workUnits+=workUnits;
-	 }
-      }
-      else{
-	 //firsttime, initialize workUnit stuff here
-	 if(workUnits>=0.0 ){
-	    //we have workUnits for this counter
-	    _logTimers[_currentId].workUnits=workUnits;
-	    _logTimers[_currentId].workUnitLabel=workUnitLabel;
-	 }
-	 else{
-	    //  no workUnits for this counter
-	    _logTimers[_currentId].workUnits=-1.0;
-	 }
-      }
-
-      //stop _cumulativeTimers & _logTimers timer              
-      _cumulativeTimers[_currentId].time+=(stopTime-_cumulativeTimers[_currentId].startTime);
-      _cumulativeTimers[_currentId].count++;
-      _cumulativeTimers[_currentId].active=false;
-      _logTimers[_currentId].time+=(stopTime-_logTimers[_currentId].startTime);
-      _logTimers[_currentId].count++;
-      _logTimers[_currentId].active=false;
-
-      
-      //go down in hierarchy    
-      _currentId=_cumulativeTimers[_currentId].parentId;
-      return true;
+      return success;
    }
 
       
@@ -1137,87 +1172,94 @@ namespace phiprof
    int getId(const string &label){
       //find child with this id
       int childId=-1;
-      for(unsigned int i=0;i<_cumulativeTimers[_currentId].childIds.size();i++)
-         if (_cumulativeTimers[_cumulativeTimers[_currentId].childIds[i]].label==label){
-            childId=_cumulativeTimers[_currentId].childIds[i];
-            break;
-         }
+#pragma omp master
+      {
+         for(unsigned int i=0;i<_cumulativeTimers[_currentId].childIds.size();i++)
+            if (_cumulativeTimers[_cumulativeTimers[_currentId].childIds[i]].label==label){
+               childId=_cumulativeTimers[_currentId].childIds[i];
+               break;
+            }
+      }
       return childId;
    }
    
 //print a tree profile (will overwrite)
    
    bool print(MPI_Comm comm,string fileNamePrefix,double minFraction){
-      int timersHash;
-      int rank,nProcesses;
-      MPI_Comm printComm;
-      TimerStatistics stats;
-      GroupStatistics groupStats;
+#pragma omp master
+      {
+         int timersHash,printIndex;
+         int rank,nProcesses;
+         MPI_Comm printComm;
+         TimerStatistics stats;
+         GroupStatistics groupStats;
       
-      //_printStartTime defined in namespace, used to correct timings for open timers
-      _printStartTime=getTime();
-      MPI_Barrier(comm);
+         //_printStartTime defined in namespace, used to correct timings for open timers
+         _printStartTime=getTime();
+         MPI_Barrier(comm);
+         
+         MPI_Comm_rank(comm,&rank);
+         MPI_Comm_size(comm,&nProcesses);
+         
+         //get hash value of timers and the print communicator
+         getPrintCommunicator(printIndex,timersHash,printComm,comm);
+         
+         //g enerate file name
+         stringstream fname;
+         fname << fileNamePrefix << "_" << printIndex << ".txt";
+         
       
-      MPI_Comm_rank(comm,&rank);
-      MPI_Comm_size(comm,&nProcesses);
-
-      //get hash value of timers and the print communicator
-      getPrintCommunicator(timersHash,printComm,comm);
-
-      //generate file name
-      stringstream fname;
-      fname << fileNamePrefix << "_" << timersHash << ".txt";
-
-      
-      collectTimerStats(stats,_cumulativeTimers,printComm);
-      collectGroupStats(groupStats,_cumulativeTimers,printComm);
-      printTree(stats,groupStats,_cumulativeTimers,minFraction,fname.str(),printComm);
-      
-      MPI_Comm_free(&printComm);
-      MPI_Barrier(comm);
-
-      double endPrintTime=getTime();
-      removePrintTime(endPrintTime,_cumulativeTimers);
-      removePrintTime(endPrintTime,_logTimers);
-      
+         collectTimerStats(stats,_cumulativeTimers,printComm);
+         collectGroupStats(groupStats,_cumulativeTimers,printComm);
+         printTree(stats,groupStats,_cumulativeTimers,minFraction,fname.str(),printComm);
+         
+         MPI_Comm_free(&printComm);
+         MPI_Barrier(comm);
+         
+         double endPrintTime=getTime();
+         removePrintTime(endPrintTime,_cumulativeTimers);
+         removePrintTime(endPrintTime,_logTimers);
+      }
       return true;
    }
    
 //print in a log format   (will append)
    bool printLogProfile(MPI_Comm comm,double simulationTime,string fileNamePrefix,string separator,int maxLevel){
-      int timersHash;
-      int rank,nProcesses;
-      MPI_Comm printComm;
-      TimerStatistics stats;
-      GroupStatistics groupStats;
-      
-      //_printStartTime defined in namespace, used to correct timings for open timers
-      _printStartTime=getTime();
-      MPI_Barrier(comm);
-      
-      MPI_Comm_rank(comm,&rank);
-      MPI_Comm_size(comm,&nProcesses);
+#pragma omp master
+      {
+         int timersHash,printIndex;
+         int rank,nProcesses;
+         MPI_Comm printComm;
+         TimerStatistics stats;
+         GroupStatistics groupStats;
+         
+         //_printStartTime defined in namespace, used to correct timings for open timers
+         _printStartTime=getTime();
+         MPI_Barrier(comm);
+         
+         MPI_Comm_rank(comm,&rank);
+         MPI_Comm_size(comm,&nProcesses);
+         
+         //get hash value of timers and the print communicator
+         getPrintCommunicator(printIndex,timersHash,printComm,comm);
+         
+         //generate file name, here we use timers hash to avoid overwriting old data!
+         stringstream fname;
+         fname << fileNamePrefix << "_" << timersHash << ".txt";
 
-      //get hash value of timers and the print communicator
-      getPrintCommunicator(timersHash,printComm,comm);
-
-      //generate file name
-      stringstream fname;
-      fname << fileNamePrefix << "_" << timersHash << ".txt";
-
-      //collect statistics
-      collectTimerStats(stats,_logTimers,printComm);
-      collectGroupStats(groupStats,_logTimers,printComm);
-      //print log
-      printLog(stats,groupStats,_logTimers,fname.str(),separator,simulationTime,maxLevel,printComm);
-      
-      MPI_Comm_free(&printComm);
-      MPI_Barrier(comm);
-
-      double endPrintTime=getTime();
-      removePrintTime(endPrintTime,_cumulativeTimers);
-      resetTime(endPrintTime,_logTimers);
-
+         //collect statistics
+         collectTimerStats(stats,_logTimers,printComm);
+         collectGroupStats(groupStats,_logTimers,printComm);
+         //print log
+         printLog(stats,groupStats,_logTimers,fname.str(),separator,simulationTime,maxLevel,printComm);
+         
+         MPI_Comm_free(&printComm);
+         MPI_Barrier(comm);
+         
+         double endPrintTime=getTime();
+         removePrintTime(endPrintTime,_cumulativeTimers);
+         resetTime(endPrintTime,_logTimers);
+      }
       return true;
    }
       

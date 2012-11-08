@@ -10,7 +10,7 @@ OUT_NO = ../lib/libnophiprof.a
 INCLUDES = -I../include
 
 # C++ compiler flags 
-CCFLAGS = -O3 # -W -Wall -Wextra -pedantic 
+CCFLAGS = -O3 -fopenmp # -W -Wall -Wextra -pedantic 
 
 # compiler
 CCC = mpiCC
@@ -19,7 +19,7 @@ CCC = mpiCC
 LIBS = 
 
 # compile flags
-LDFLAGS = -O3
+LDFLAGS = -O3 -lgomp
 
 .SUFFIXES: .cpp
 

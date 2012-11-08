@@ -34,6 +34,11 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include "pat_api.h"
 #endif
 
+#ifdef _OPENMP
+#include "omp.h"
+#endif
+
+
 using namespace std;
 
 namespace phiprof
@@ -45,11 +50,12 @@ namespace phiprof
 	 string workUnitLabel;   //unit for the counter workUnitCount
 	 double workUnits;        // how many units of work have we done. If -1 it is not counted, or printed
 	 vector<string> groups; // What user-defined groups does this timer belong to, e.g., "MPI", "IO", etc..
-
+	
 	 int id; // unique id identifying this timer (index for timers)
 	 int parentId;  //key of parent (id)
-	 vector<int> childIds; //children of this timer
-
+	 int threads; //threads active when this timer was called
+  	 vector<int> childIds; //children of this timer
+	
 	 int level;  //what hierarchy level
 	 int count; //how many times have this been accumulated
 	 double time; // total time accumulated
@@ -63,7 +69,7 @@ namespace phiprof
 	 int rank;
       };
 
-      //         //Updated in collectStats, only valid on root rank
+      // Updated in collectStats, only valid on root rank
       struct TimerStatistics {
          vector<int> id; //id of the timer at this index in the statistics vectors
          vector<int> level;
@@ -75,6 +81,7 @@ namespace phiprof
          vector<bool> hasWorkUnits;
          vector<double> workUnitsSum;
          vector<int> countSum;
+     	 vector<int> threadsSum;
       };
 
       struct GroupStatistics {
@@ -191,6 +198,10 @@ namespace phiprof
 	 timerData.startTime=-1;
 	 timerData.count=0;
          timerData.active=false;
+	 timerData.threads=1;
+#ifdef _OPENMP
+	 timerData.threads=omp_get_num_threads();
+#endif
 	 //timerData.work  UnitCount initialized in stop
 	 //add timer, to both vectors   
 	 _cumulativeTimers.push_back(timerData);
@@ -250,6 +261,7 @@ namespace phiprof
          return time;
       }
    
+     
       
       double getGroupInfo(string group,int id,const vector<TimerData> &timers , MPI_Comm comm){
          double groupTime=0.0;
@@ -345,6 +357,7 @@ namespace phiprof
          static vector<doubleRankPair> timeRank;
          static vector<double> workUnits;
          static vector<int> count;
+         static vector<int> threads;
          static vector<int> parentIndices;
          int currentIndex;
          doubleRankPair in;
@@ -357,7 +370,8 @@ namespace phiprof
             time.clear();
             timeRank.clear();
             count.clear();
-            workUnits.clear();
+            threads.clear();
+	    workUnits.clear();
             parentIndices.clear();
             stats.id.clear();
             stats.level.clear();
@@ -376,6 +390,7 @@ namespace phiprof
          in.rank=rank;
          timeRank.push_back(in);
          count.push_back(timers[id].count);
+	 threads.push_back(timers[id].threads);
          workUnits.push_back(timers[id].workUnits);
          parentIndices.push_back(parentIndex);
          
@@ -395,6 +410,7 @@ namespace phiprof
             in.rank=rank;
             timeRank.push_back(in);
             count.push_back(timers[id].count);
+	    threads.push_back(timers[id].threads);
             workUnits.push_back(-1);
             parentIndices.push_back(currentIndex);
          }
@@ -411,6 +427,8 @@ namespace phiprof
                stats.workUnitsSum.resize(nTimers);
                stats.hasWorkUnits.resize(nTimers);
                stats.countSum.resize(nTimers);
+               stats.threadsSum.resize(nTimers);
+
                stats.timeTotalFraction.resize(nTimers);
                stats.timeParentFraction.resize(nTimers);
                vector<double> workUnitsMin;
@@ -423,6 +441,7 @@ namespace phiprof
                MPI_Reduce(&(workUnits[0]),&(stats.workUnitsSum[0]),nTimers,MPI_DOUBLE,MPI_SUM,0,comm);
                MPI_Reduce(&(workUnits[0]),&(workUnitsMin[0]),nTimers,MPI_DOUBLE,MPI_MIN,0,comm);
                MPI_Reduce(&(count[0]),&(stats.countSum[0]),nTimers,MPI_INT,MPI_SUM,0,comm);
+               MPI_Reduce(&(threads[0]),&(stats.threadsSum[0]),nTimers,MPI_INT,MPI_SUM,0,comm);
                
                for(int i=0;i<nTimers;i++){
                   if(workUnitsMin[i]<0)
@@ -449,12 +468,14 @@ namespace phiprof
                
                MPI_Reduce(&(workUnits[0]),NULL,nTimers,MPI_DOUBLE,MPI_SUM,0,comm);
                MPI_Reduce(&(workUnits[0]),NULL,nTimers,MPI_DOUBLE,MPI_MIN,0,comm);
-               MPI_Reduce(&(count[0]),NULL,nTimers,MPI_INT,MPI_SUM,0,comm);
+               MPI_Reduce(&(count[0]),NULL,nTimers,MPI_INT,MPI_SUM,0,comm);               
+	       MPI_Reduce(&(threads[0]),NULL,nTimers,MPI_INT,MPI_SUM,0,comm);
             }
             //clear temporary data structures
             time.clear();
             timeRank.clear();
             count.clear();
+	    threads.clear();
             workUnits.clear();
             parentIndices.clear();
          }
@@ -539,7 +560,7 @@ namespace phiprof
                output << setw(_levelWidth+1) << stats.level[i];
                
                if(id!=-1){
-                  //other label has no groups
+		 //other label has no groups
                   for (vector<string>::const_iterator group = timers[id].groups.begin();
                        group != timers[id].groups.end(); ++group) {
 		    string groupId=groupIds.count(*group) ? groupIds.find(*group)->second : std::string();
@@ -550,8 +571,7 @@ namespace phiprof
                
                if(hasNoGroups) output << setw(groupWidth+1) << "";
                else output << setw(groupWidth-timers[id].groups.size()+1) << "";
-               
-
+	       
                output << setw(indent) << "";
                if(id!=-1){
                   output << setw(labelWidth+1-indent) << setiosflags(ios::left) << timers[id].label;
@@ -560,7 +580,7 @@ namespace phiprof
                   output << setw(labelWidth+1-indent) << setiosflags(ios::left) << "Other";
                }
 
-                  
+               output << setw(_floatWidth+1) << stats.threadsSum[i]/nProcesses;        	       
                output << setw(_floatWidth) << stats.timeSum[i]/nProcesses;
                output << setw(_floatWidth) << 100.0*stats.timeParentFraction[i];
                output << setw(_floatWidth) << stats.timeMax[i].val;
@@ -609,10 +629,14 @@ namespace phiprof
          output << "Phiprof results with time fraction of total time larger than " << minFraction;
          output<<endl;
          output << "Processes in set of timers " << nProcs;
+#ifdef _OPENMP
+	 output << " with (up to) " << omp_get_max_threads() << " threads ";
+#endif 
          output<<endl;
          for(int i=0;i<totalWidth;i++) output <<"-";
          output<<endl;
          output<<setw(_levelWidth+1+groupWidth+1+labelWidth+1)<< setiosflags(ios::left) << "";
+         output<<setw(_floatWidth)<< "Threads";
          output<<setw(4*_floatWidth+2*_intWidth) <<"Time(s)";
          output<<setw(_floatWidth)<<"Calls";
          output<<setw(2*_floatWidth)<<"Workunit-rate";
@@ -623,6 +647,7 @@ namespace phiprof
          output<<setw(labelWidth+1)<< "Label";
 //         output << setw(1) << "|";
 	    //  time
+         output<<setw(_floatWidth) <<"Average";
          output<<setw(_floatWidth) <<"Average";
          output<<setw(_floatWidth) <<"parent %";
          output<<setw(_floatWidth) <<"Maximum";
@@ -660,6 +685,7 @@ namespace phiprof
 	      output << setw(_levelWidth+1) << " ";
 	      output << setw(groupWidth+1) << groupId;
 	      output << setw(labelWidth+1) << groupStats.name[i];
+	      output << setw(_floatWidth) << " ";
 	      output << setw(_floatWidth) << groupStats.timeSum[i]/nProcesses;
 	      output << setw(_floatWidth) << 100.0*groupStats.timeTotalFraction[i];
 	      output << setw(_floatWidth) << groupStats.timeMax[i].val;
@@ -701,7 +727,7 @@ namespace phiprof
             }
 
             getGroupIds(groupIds,groupWidth,timers);
-            
+	    
             //make sure we use default floats, and not fixed or other format
             output <<resetiosflags( ios::floatfield );
             //set       float p  rec  ision
@@ -1031,6 +1057,7 @@ namespace phiprof
             //start log timer
             _logTimers[_currentId].startTime=_cumulativeTimers[_currentId].startTime;
             _logTimers[_currentId].active=true;
+
          
 #ifdef CRAYPAT
             PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());

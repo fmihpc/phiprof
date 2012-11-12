@@ -21,6 +21,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include "mpi.h"
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -131,17 +132,19 @@ namespace phiprof
       //Hash value identifying all labels, groups and workunitlabels.
       //If any strings differ, hash should differ. Computed recursively in the same way as prints
       int getTimersHash(const vector<TimerData> &timers,int id=0){
-         int hashValue=(int)hash(timers[id].label.c_str());
-         hashValue+=(int)hash(timers[id].workUnitLabel.c_str());
+         unsigned long hashValue=(int)hash(timers[id].label.c_str());
+         hashValue+=hash(timers[id].workUnitLabel.c_str());
          for(unsigned int i=0;i<timers[id].childIds.size();i++){
             hashValue+=getTimersHash(timers,timers[id].childIds[i]);
          }
 
-         // MPI_Comm_split will flip out if given a negative value
-         if (hashValue < 0) {
-            return -hashValue;
+         
+         // MPI_Comm_split needs a non-zero value
+         if (hashValue == 0) {
+            return 1;
          } else {
-            return hashValue;
+            //we return an integer value
+            return hashValue%std::numeric_limits<int>::max();
          }
       }
 
@@ -936,10 +939,16 @@ namespace phiprof
       }
 
       
-      void getPrintCommunicator(int &printIndex,int &timersHash,MPI_Comm &printComm, MPI_Comm comm){
+      bool getPrintCommunicator(int &printIndex,int &timersHash,MPI_Comm &printComm, MPI_Comm comm){
+         int mySuccess=1;
+         int success;
+         int myRank;
+         MPI_Comm_rank(comm,&myRank);
 
-         //hash should be the same for _cumulativeTimers, _logTimers
+//hash should be the same for _cumulativeTimers, _logTimers
+
          timersHash=getTimersHash(_cumulativeTimers);
+
          
          int result = MPI_Comm_split(comm, timersHash, 0, &printComm);
          
@@ -948,29 +957,46 @@ namespace phiprof
             char error_string[MPI_MAX_ERROR_STRING + 1];
             MPI_Error_string(result, error_string, &error_string_len);
             error_string[MPI_MAX_ERROR_STRING] = 0;
-            cerr << "PHIPROF-ERROR: Error splitting communicator for printing: " << error_string << endl;
-            abort();
+            if(myRank==0)
+               cerr << "PHIPROF-ERROR: Error splitting communicator for printing: " << error_string << endl;
+            mySuccess=0;
          }
-
+         
          //Now compute the id for the print comms. First communicatr is given index 0, next 1 and so on.
          int printCommRank;
          int printCommSize;
          //get rank in printComm
          MPI_Comm_rank(printComm,&printCommRank);
          MPI_Comm_size(printComm,&printCommSize);
-         //communicator with print comm masters(rank=0)
+         //communicator with printComm masters(rank=0), this will be used to number the printComm's
          MPI_Comm printCommMasters;
          MPI_Comm_split(comm,printCommRank==0,-printCommSize,&printCommMasters);
          MPI_Comm_rank(printCommMasters,&printIndex);
          MPI_Comm_free(&printCommMasters);
-         
          MPI_Bcast(&printIndex,1,MPI_INT,0,printComm);
-            
-      }
-         
 
-      
-      
+         //check that the hashes at least have the same number of timers, just to be sure and to avoid crashes...
+
+         int nTimers=_cumulativeTimers.size();
+         int maxTimers;
+         int minTimers;
+         
+         MPI_Reduce(&nTimers,&maxTimers,1,MPI_INT,MPI_MAX,0,printComm);
+         MPI_Reduce(&nTimers,&minTimers,1,MPI_INT,MPI_MIN,0,printComm);
+
+         if(printCommRank==0) { 
+            if(minTimers !=  maxTimers) {
+               cerr << "PHIPROF-ERROR: Missmatch in number of timers, hash conflict?  maxTimers = " << maxTimers << " minTimers = " << minTimers << endl;
+               mySuccess=0;
+            }
+         }
+         
+         //if any process failed, the whole routine failed
+         MPI_Allreduce(&mySuccess,&success,1,MPI_INT,MPI_MIN,comm);
+         
+         return success;
+
+      }
    }
    
 // end unnamed namespace
@@ -1229,16 +1255,14 @@ namespace phiprof
          MPI_Comm_size(comm,&nProcesses);
          
          //get hash value of timers and the print communicator
-         getPrintCommunicator(printIndex,timersHash,printComm,comm);
-         
-         //g enerate file name
-         stringstream fname;
-         fname << fileNamePrefix << "_" << printIndex << ".txt";
-         
-      
-         collectTimerStats(stats,_cumulativeTimers,printComm);
-         collectGroupStats(groupStats,_cumulativeTimers,printComm);
-         printTree(stats,groupStats,_cumulativeTimers,minFraction,fname.str(),printComm);
+         if(getPrintCommunicator(printIndex,timersHash,printComm,comm)) {
+            //generate file name
+            stringstream fname;
+            fname << fileNamePrefix << "_" << printIndex << ".txt";
+            collectTimerStats(stats,_cumulativeTimers,printComm);
+            collectGroupStats(groupStats,_cumulativeTimers,printComm);
+            printTree(stats,groupStats,_cumulativeTimers,minFraction,fname.str(),printComm);
+         }
          
          MPI_Comm_free(&printComm);
          MPI_Barrier(comm);
@@ -1268,18 +1292,18 @@ namespace phiprof
          MPI_Comm_size(comm,&nProcesses);
          
          //get hash value of timers and the print communicator
-         getPrintCommunicator(printIndex,timersHash,printComm,comm);
+         if(getPrintCommunicator(printIndex,timersHash,printComm,comm)) {
          
-         //generate file name, here we use timers hash to avoid overwriting old data!
-         stringstream fname;
-         fname << fileNamePrefix << "_" << timersHash << ".txt";
-
-         //collect statistics
-         collectTimerStats(stats,_logTimers,printComm);
-         collectGroupStats(groupStats,_logTimers,printComm);
-         //print log
-         printLog(stats,groupStats,_logTimers,fname.str(),separator,simulationTime,maxLevel,printComm);
-         
+            //generate file name, here we use timers hash to avoid overwriting old data!
+            stringstream fname;
+            fname << fileNamePrefix << "_" << timersHash << ".txt";
+            
+            //collect statistics
+            collectTimerStats(stats,_logTimers,printComm);
+            collectGroupStats(groupStats,_logTimers,printComm);
+            //print log
+            printLog(stats,groupStats,_logTimers,fname.str(),separator,simulationTime,maxLevel,printComm);
+         }
          MPI_Comm_free(&printComm);
          MPI_Barrier(comm);
          

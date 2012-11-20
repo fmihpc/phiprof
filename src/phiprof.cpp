@@ -132,8 +132,14 @@ namespace phiprof
       //Hash value identifying all labels, groups and workunitlabels.
       //If any strings differ, hash should differ. Computed recursively in the same way as prints
       int getTimersHash(const vector<TimerData> &timers,int id=0){
-         unsigned long hashValue=(int)hash(timers[id].label.c_str());
+         unsigned long hashValue;
+         //add hash values from label, workunitlabel and groups. Everything has to match.
+         hashValue=hash(timers[id].label.c_str());
          hashValue+=hash(timers[id].workUnitLabel.c_str());
+         for (vector<string>::const_iterator g = timers[id].groups.begin();g != timers[id].groups.end(); ++g ) {
+            hashValue+=hash((*g).c_str());
+         }
+         
          for(unsigned int i=0;i<timers[id].childIds.size();i++){
             hashValue+=getTimersHash(timers,timers[id].childIds[i]);
          }

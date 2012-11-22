@@ -359,21 +359,20 @@ namespace phiprof
 
       
 //collect timer stats, call children recursively. In original code this should be called for the first id=0
-      void collectTimerStats(TimerStatistics &stats,const vector<TimerData> &timers,MPI_Comm &comm,int id=0,int parentIndex=0){
-	 int rank,nProcesses;
+// reportRank is the rank to be used in the report, not the rank in the comm communicator
+      void collectTimerStats(TimerStatistics &stats,const vector<TimerData> &timers,MPI_Comm &comm,int reportRank,int id=0,int parentIndex=0){
+         int rank;
          //per process info. updated in collectStats
          static vector<double> time;
          static vector<doubleRankPair> timeRank;
          static vector<double> workUnits;
          static vector<int> count;
          static vector<int> threads;
-         static vector<int> parentIndices;
+static vector<int> parentIndices;
          int currentIndex;
          doubleRankPair in;
-            
-	 MPI_Comm_rank(comm,&rank);
-	 MPI_Comm_size(comm,&nProcesses);
 
+         MPI_Comm_rank(comm,&rank); 
          //first time we call  this function
          if(id==0){
             time.clear();
@@ -396,7 +395,7 @@ namespace phiprof
          stats.level.push_back(timers[id].level);
          time.push_back(currentTime);
          in.val=currentTime;
-         in.rank=rank;
+         in.rank=reportRank;
          timeRank.push_back(in);
          count.push_back(timers[id].count);
 	 threads.push_back(timers[id].threads);
@@ -407,7 +406,7 @@ namespace phiprof
          //collect data for children. Also compute total time spent in children
          for(unsigned int i=0;i<timers[id].childIds.size();i++){
             childTime+=getTimerTime(timers[id].childIds[i],timers);
-            collectTimerStats(stats,timers,comm,timers[id].childIds[i],currentIndex);
+            collectTimerStats(stats,timers,comm,reportRank,timers[id].childIds[i],currentIndex);
          }
          
          if(timers[id].childIds.size()>0){
@@ -416,7 +415,7 @@ namespace phiprof
             stats.level.push_back(timers[timers[id].childIds[0]].level); //same level as children
             time.push_back(currentTime-childTime);
             in.val=currentTime-childTime;
-            in.rank=rank;
+            in.rank=reportRank;
             timeRank.push_back(in);
             count.push_back(timers[id].count);
 	    threads.push_back(timers[id].threads);
@@ -1265,7 +1264,7 @@ namespace phiprof
             //generate file name
             stringstream fname;
             fname << fileNamePrefix << "_" << printIndex << ".txt";
-            collectTimerStats(stats,_cumulativeTimers,printComm);
+            collectTimerStats(stats,_cumulativeTimers,printComm,rank); //rank is in respect to comm given to print!
             collectGroupStats(groupStats,_cumulativeTimers,printComm);
             printTree(stats,groupStats,_cumulativeTimers,minFraction,fname.str(),printComm);
          }
@@ -1305,7 +1304,7 @@ namespace phiprof
             fname << fileNamePrefix << "_" << timersHash << ".txt";
             
             //collect statistics
-            collectTimerStats(stats,_logTimers,printComm);
+            collectTimerStats(stats,_logTimers,printComm,rank);
             collectGroupStats(groupStats,_logTimers,printComm);
             //print log
             printLog(stats,groupStats,_logTimers,fname.str(),separator,simulationTime,maxLevel,printComm);

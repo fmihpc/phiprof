@@ -25,7 +25,6 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
-
 extern "C" int phiprof_initializeTimer(char *label,int nGroups, ... ){
   va_list listPointer;
   vector<string> groupStrings;
@@ -84,5 +83,9 @@ extern "C" int phiprof_print(MPI_Comm comm,char *fileNamePrefix,double minFracti
 
 extern "C"  int phiprof_printLogProfile(MPI_Comm comm,double simulationTime,char *fileNamePrefix,char *separator,int maxLevel){
   return (int)phiprof::printLogProfile(comm,simulationTime,string(fileNamePrefix),string(separator),maxLevel);
+}
+
+extern "C"  int phiprof_assert(bool condition, char * error_message, char * file, int line ) {
+   phiprof::assert(condition,string(error_message),string(file),line);
 }
 

@@ -23,6 +23,12 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
  *  interface) for documentation of the various functions.
 */
 
+#ifndef NDEBUG
+#define pp_assert(a,b) phiprof_assert( a, b, __FILE__, __LINE__ )
+#else
+#define pp_assert(a,b) 
+#endif
+
 int phiprof_initializeTimer(char *label,int nGroups, ... );
 int phiprof_getId(char *label);
 
@@ -35,6 +41,8 @@ int phiprof_stopIdUnits(int id,double units,char *unitName);
 
 int phiprof_print(MPI_Comm comm,char *fileNamePrefix,double minFraction);
 int phiprof_printLogProfile(MPI_Comm comm,double simulationTime,char *fileNamePrefix,char *separator,int maxLevel);
+
+int phiprof_assert(bool condition, char * error_message, char * file, int line );
 
 #endif
 

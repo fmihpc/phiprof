@@ -24,6 +24,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "mpi.h"
 
 
+#ifndef NDEBUG
+#define pp_assert(a,b) phiprof::assert( a, b, __FILE__, __LINE__ )
+#else
+#define pp_assert(a,b) 
+#endif
+   
+
 /* This files contains the C++ interface */
 
 namespace phiprof
@@ -188,6 +195,26 @@ namespace phiprof
               const std::string &workUnitLabel="");
 
 
+   /**
+   * Assert function
+   *
+   * It prints out the error message, the suplied line and file
+   * information. It also prints out the current position in the timer
+   * stack in phiprof. Finally it terminates the process, and thus the
+   * whole parallel program. Can also be used through the
+   * phiprof_assert macro
+   *
+   * @param condition
+   *   If false, then the error is raised.
+   * @param error_message
+   *   The error message
+   * @param file
+   *   The source  file where this is called, typically supplied by  __FILE__
+   * @param line     
+   *   The line in the source  file where this is called, typically supplied by  __LINE__ 
+   */
+   void assert(bool condition, const std::string error_message, const std::string  file, int line );
+   
 }
 
 

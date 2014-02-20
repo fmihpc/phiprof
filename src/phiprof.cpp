@@ -128,7 +128,7 @@ namespace phiprof
 	 return hash;
       }
 
-      
+         
       //Hash value identifying all labels, groups and workunitlabels.
       //If any strings differ, hash should differ. Computed recursively in the same way as prints
       int getTimersHash(const vector<TimerData> &timers,int id=0){
@@ -183,7 +183,7 @@ namespace phiprof
          
          return fullLabel;
       }
-      
+         
 ////-------------------------------------------------------------------------
 ///  Timer handling functions functions
 ////-------------------------------------------------------------------------            
@@ -250,7 +250,7 @@ namespace phiprof
 
 
       
-      
+         
 
 
    
@@ -708,7 +708,7 @@ static vector<int> parentIndices;
       }
          
       
-   
+      
       //print out global timers
       //If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
       bool printTree(const TimerStatistics &stats,const GroupStatistics &groupStats,const vector<TimerData> &timers,double minFraction,string fileName, MPI_Comm comm){
@@ -1009,6 +1009,7 @@ static vector<int> parentIndices;
 // public functions begin    
 
 
+   
       
    //initialize a timer, with a particular label belonging to some groups
    //returns id of new timer. If timer exists, then that id is returned.
@@ -1317,6 +1318,24 @@ static vector<int> parentIndices;
          resetTime(endPrintTime,_logTimers);
       }
       return true;
+   }
+   
+   void assert(bool condition, const string error_message, const string  file, int line ) {
+#ifndef NDEBUG
+      if(!condition) {
+#pragma omp critical
+         {
+            int rank;
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+            cerr << "ASSERT ERROR on process "<< rank << ": " << error_message      
+                 << ", File: " << file << ", Line: " << line
+                 << ", phiproftimer:" << getFullLabel(_cumulativeTimers,_currentId,false)
+                 << endl;       
+            exit(1);
+         }
+      }
+#endif
+      return;
    }
       
 }

@@ -23,12 +23,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "vector"
 #include "mpi.h"
 
-
 #ifndef NDEBUG
-#define pp_assert(a,b) phiprof::assert( a, b, __FILE__, __LINE__ )
+#define phiprof_assert2(a,b) phiprof::phiprofAssert( a, b, __FILE__, __LINE__ )
+#define phiprof_assert1(a) phiprof::phiprofAssert( a, #a, __FILE__, __LINE__ )
 #else
-#define pp_assert(a,b) 
+#define phiprof_assert2(a,b)
+#define phiprof_assert1(a) 
 #endif
+#define GET_MACRO(_1,_2,NAME,...) NAME
+#define phiprof_assert(...) GET_MACRO(__VA_ARGS__, phiprof_assert2, phiprof_assert1)(__VA_ARGS__)
+
    
 
 /* This files contains the C++ interface */
@@ -102,13 +106,7 @@ namespace phiprof
    *   (optional) Default value is to print all timers
    *   minFraction can be used to filter the timers being printed so
    *   that only the ones with a meaningfull amount of time are
-   *   printed. Only timers with (timer time)/(total time)>=minFraction
-   *   are printed. If minfraction is <=0.0 then all timers are printed.
-   * @return
-   *   Returns true if pofile printed successfully.
-   */
-  
-  bool print(MPI_Comm comm,std::string fileNamePrefix="profile",double minFraction=0.0);
+   *   prin"profile",double minFraction=0.0);
   
     /**
    * Print the current timer state in a easily parsable format
@@ -220,3 +218,4 @@ namespace phiprof
 
 #endif
 
+                                                                                                                                                                                                                                                                             

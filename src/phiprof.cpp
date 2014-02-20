@@ -1320,7 +1320,7 @@ static vector<int> parentIndices;
       return true;
    }
    
-   void assert(bool condition, const string error_message, const string  file, int line ) {
+   void phiprofAssert(bool condition, const string error_message, const string  file, int line ) {
 #ifndef NDEBUG
       if(!condition) {
 #pragma omp critical

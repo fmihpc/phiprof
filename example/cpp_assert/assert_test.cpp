@@ -27,15 +27,17 @@ using namespace std;
 
 int main(int argc,char **argv){
 
-   int rank;
+   int rank,nprocs;
    MPI_Init(&argc,&argv);
    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+   MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
 
    phiprof::start("Greeting");
    cout << "Hello world from rank " << rank << endl;
    phiprof::start("second");
-   pp_assert(rank<4,"Max 4 tasks for pp_assert");
-   phiprof::assert(rank<2,"Max 2 tasks for phiprof::assert", __FILE__, __LINE__);
+   phiprof_assert(rank==0 && nprocs!=5,"5 tasks encountered using  phiprof_assert(a,b)");
+   phiprof_assert(rank==0 && nprocs!=4);
+   phiprof::phiprofAssert(rank==0 && nprocs!=3,"3 tasks for phiprof::phiprofAssert", __FILE__, __LINE__);
 
    phiprof::stop("second");
    phiprof::stop("Greeting", 1, "greetings");

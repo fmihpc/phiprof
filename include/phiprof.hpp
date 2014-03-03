@@ -106,8 +106,14 @@ namespace phiprof
    *   (optional) Default value is to print all timers
    *   minFraction can be used to filter the timers being printed so
    *   that only the ones with a meaningfull amount of time are
-   *   prin"profile",double minFraction=0.0);
-  
+   *   printed. Only timers with (timer time)/(total time)>=minFraction
+   *   are printed. If minfraction is <=0.0 then all timers are printed.
+   * @return
+   *   Returns true if pofile printed successfully.
+   */
+
+   bool print(MPI_Comm comm,std::string fileNamePrefix="profile",double minFraction=0.0);
+   
     /**
    * Print the current timer state in a easily parsable format
    *
@@ -211,11 +217,8 @@ namespace phiprof
    * @param line     
    *   The line in the source  file where this is called, typically supplied by  __LINE__ 
    */
-   void assert(bool condition, const std::string error_message, const std::string  file, int line );
-   
+   void phiprofAssert(bool condition, const std::string error_message, const std::string  file, int line );
 }
 
 
 #endif
-
-                                                                                                                                                                                                                                                                             

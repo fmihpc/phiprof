@@ -196,8 +196,16 @@ namespace phiprof
    * \overload  bool phiprof::stop(const std::string &label,double workUnits=-1.0,const std::string &workUnitLabel="")
    */
    bool stop (int id,
-              double workUnits=-1.0,
-              const std::string &workUnitLabel="");
+              double workUnits,
+              const std::string &workUnitLabel);
+
+
+   
+   /**
+   * Fastest
+   */
+   bool stop (int id);
+
 
 
    /**

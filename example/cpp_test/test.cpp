@@ -96,6 +96,7 @@ int main(int argc,char **argv){
 
    if(rank==0)
       cout << "Measuring accuracy" <<endl;
+/*
    phiprof::start("Test accuracy");
    if(rank==0)
       cout << "  1/2" <<endl;
@@ -121,7 +122,7 @@ int main(int argc,char **argv){
    phiprof::stop("100x0.1s computations + logprofile"); 
 
    phiprof::stop("Test accuracy");
-   
+*/   
    MPI_Barrier(MPI_COMM_WORLD);
    double t1=MPI_Wtime();
    phiprof::print(MPI_COMM_WORLD);
@@ -129,6 +130,5 @@ int main(int argc,char **argv){
    if(rank==0)   
       cout<< "Print time is "<<MPI_Wtime()-t1<<endl;
 //   phiprof::print(MPI_COMM_WORLD,0.1);
-
    MPI_Finalize();
 }

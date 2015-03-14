@@ -30,10 +30,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <sstream>
 #include "phiprof.hpp"
-//include craypat api headers if compiled with craypat on Cray XT/XE
-#ifdef CRAYPAT
-#include "pat_api.h"
-#endif
+
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -58,7 +55,7 @@ namespace phiprof
   	 vector<int> childIds; //children of this timer
 	
 	 int level;  //what hierarchy level
-	 int count; //how many times have this been accumulated
+	 int64_t count; //how many times have this been accumulated
 	 double time; // total time accumulated
 	 double startTime; //Starting time of previous start() call
 
@@ -81,7 +78,7 @@ namespace phiprof
          vector<double> timeParentFraction;
          vector<bool> hasWorkUnits;
          vector<double> workUnitsSum;
-         vector<int> countSum;
+         vector<int64_t> countSum;
      	 vector<int> threadsSum;
       };
 
@@ -108,7 +105,7 @@ namespace phiprof
 
       //defines print-area widths for print() output
       const int _indentWidth=2; //how many spaces each level is indented
-      const int _floatWidth=10; //width of float fields;
+      const int _floatWidth=11; //width of float fields;
       const int _intWidth=6;   //width of int fields;
       const int _unitWidth=4;  //width of workunit label
       const int _levelWidth=5; //width of level label
@@ -239,13 +236,23 @@ namespace phiprof
 	 return true;
       }
       
-      //this function returns the time in seconds 
+      //this function returns the time in seconds . 
       double getTime() {
-	 return MPI_Wtime();
+         struct timespec t;
+         //COARSE is not supported on Cray XC...
+         clock_gettime(CLOCK_ID,&t);
+	 return t.tv_sec + 1.0e-9 * t.tv_nsec;
+
+//	 return MPI_Wtime();    
       }
       //this function returns the accuracy of the timer     
       double getTick() {
-	 return MPI_Wtick();
+         struct timespec t;
+         //COARSE is not supported on Cray XC...
+         clock_getres(CLOCK_ID,&t);
+	 return t.tv_sec + 1.0e-9 * t.tv_nsec;
+
+//	 return MPI_Wtick();
       }
 
 
@@ -366,7 +373,7 @@ namespace phiprof
          static vector<double> time;
          static vector<doubleRankPair> timeRank;
          static vector<double> workUnits;
-         static vector<int> count;
+         static vector<int64_t> count;
          static vector<int> threads;
 static vector<int> parentIndices;
          int currentIndex;
@@ -448,7 +455,7 @@ static vector<int> parentIndices;
                
                MPI_Reduce(&(workUnits[0]),&(stats.workUnitsSum[0]),nTimers,MPI_DOUBLE,MPI_SUM,0,comm);
                MPI_Reduce(&(workUnits[0]),&(workUnitsMin[0]),nTimers,MPI_DOUBLE,MPI_MIN,0,comm);
-               MPI_Reduce(&(count[0]),&(stats.countSum[0]),nTimers,MPI_INT,MPI_SUM,0,comm);
+               MPI_Reduce(&(count[0]),&(stats.countSum[0]),nTimers,MPI_INT64_T,MPI_SUM,0,comm);
                MPI_Reduce(&(threads[0]),&(stats.threadsSum[0]),nTimers,MPI_INT,MPI_SUM,0,comm);
                
                for(int i=0;i<nTimers;i++){
@@ -476,7 +483,7 @@ static vector<int> parentIndices;
                
                MPI_Reduce(&(workUnits[0]),NULL,nTimers,MPI_DOUBLE,MPI_SUM,0,comm);
                MPI_Reduce(&(workUnits[0]),NULL,nTimers,MPI_DOUBLE,MPI_MIN,0,comm);
-               MPI_Reduce(&(count[0]),NULL,nTimers,MPI_INT,MPI_SUM,0,comm);               
+               MPI_Reduce(&(count[0]),NULL,nTimers,MPI_INT64_T,MPI_SUM,0,comm);               
 	       MPI_Reduce(&(threads[0]),NULL,nTimers,MPI_INT,MPI_SUM,0,comm);
             }
             //clear temporary data structures
@@ -639,8 +646,9 @@ static vector<int> parentIndices;
          output << "Processes in set of timers " << nProcs;
 #ifdef _OPENMP
 	 output << " with (up to) " << omp_get_max_threads() << " threads ";
-#endif 
+#endif
          output<<endl;
+         output << "Timer resolution is "<< getTick() << endl;
          for(int i=0;i<totalWidth;i++) output <<"-";
          output<<endl;
          output<<setw(_levelWidth+1+groupWidth+1+labelWidth+1)<< setiosflags(ios::left) << "";
@@ -1076,25 +1084,22 @@ static vector<int> parentIndices;
       bool success=true;
 #pragma omp master
       {
+#ifdef DEBUG_PHIPROF_TIMERS
          if(_currentId!=_cumulativeTimers[id].parentId){
             cerr << "PHIPROF-ERROR: Starting timer that is not a child of the current profiling region" <<endl;
             success= false;
+            return success;        
          }
-         else{
-            _currentId=id;      
-            //start timer
-            _cumulativeTimers[_currentId].startTime=getTime();
-            _cumulativeTimers[_currentId].active=true;
-
-            //start log timer
-            _logTimers[_currentId].startTime=_cumulativeTimers[_currentId].startTime;
-            _logTimers[_currentId].active=true;
-
-         
-#ifdef CRAYPAT
-            PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());
 #endif
-         }
+         _currentId=id;      
+         //start timer
+         _cumulativeTimers[_currentId].startTime=getTime();
+         _cumulativeTimers[_currentId].active=true;
+         
+         //start log timer
+         _logTimers[_currentId].startTime=_cumulativeTimers[_currentId].startTime;
+         _logTimers[_currentId].active=true;
+         
       }
       return success;        
    }
@@ -1113,10 +1118,7 @@ static vector<int> parentIndices;
          //start log timer   
          _logTimers[_currentId].startTime=_cumulativeTimers[_currentId].startTime;
          _logTimers[_currentId].active=true;
-      
-#ifdef CRAYPAT
-         PAT_region_begin(_currentId+1,getFullLabel(_cumulativeTimers,_currentId,true).c_str());
-#endif
+
       }
       return true;        
    }
@@ -1128,18 +1130,20 @@ static vector<int> parentIndices;
       bool success=true;
 #pragma omp master
       {
+#ifdef DEBUG_PHIPROF_TIMERS         
          if(label != _cumulativeTimers[_currentId].label ){
             cerr << "PHIPROF-ERROR: label missmatch in profile::stop  when stopping "<< label <<
                ". The started timer is "<< _cumulativeTimers[_currentId].label<< " at level " << _cumulativeTimers[_currentId].level << endl;
             success=false;
-         }
-         if(success)
-            success=stop(_currentId,workUnits,workUnitLabel);
+            return success;
+      }
+#endif
+         success=stop(_currentId, workUnits, workUnitLabel);
       }
       return success;
    }
 
-   //stop a timer defined by id
+         //stop a timer defined by id
    bool stop (int id,
               double workUnits,
               const string &workUnitLabel){
@@ -1147,84 +1151,114 @@ static vector<int> parentIndices;
 #pragma omp master
       {
          double stopTime=getTime();
+#ifdef DEBUG_PHIPROF_TIMERS         
          if(id != _currentId ){
             cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << _cumulativeTimers[_currentId].level << endl;
             success=false;
+            return success;
          }
-
-         else {
-         
-#ifdef CRAYPAT
-            PAT_region_end(_currentId+1);
-#endif  
-
-         
-            //handle workUnits for _cumulativeTimers               
-            if(_cumulativeTimers[_currentId].count!=0){
-               //if this, or a previous, stop did not include work units then do not add them
-               //work units have to be defined for all stops with a certain (full)label
-               if(workUnits<0 || _cumulativeTimers[_currentId].workUnits<0){
-                  _cumulativeTimers[_currentId].workUnits=-1;
-                  _logTimers[_currentId].workUnits=-1;
-               }
-               else{
-                  _cumulativeTimers[_currentId].workUnits+=workUnits;
-               }
+#endif
+         //handle workUnits for _cumulativeTimers               
+         if(_cumulativeTimers[_currentId].count!=0){
+            //if this, or a previous, stop did not include work units then do not add them
+            //work units have to be defined for all stops with a certain (full)label
+            if(workUnits<0 || _cumulativeTimers[_currentId].workUnits<0){
+               _cumulativeTimers[_currentId].workUnits=-1;
+               _logTimers[_currentId].workUnits=-1;
             }
             else{
-               //firsttime, initialize workUnit stuff here
-               if(workUnits>=0.0 ){
-                  //we have workUnits for this counter
-                  _cumulativeTimers[_currentId].workUnits=workUnits;
-                  _cumulativeTimers[_currentId].workUnitLabel=workUnitLabel;
-               }
-               else{
-                  // no workUnits for this counter
-                  _cumulativeTimers[_currentId].workUnits=-1.0;
-               }
+               _cumulativeTimers[_currentId].workUnits+=workUnits;
             }
+         }
+         else{
+            //firsttime, initialize workUnit stuff here
+            if(workUnits>=0.0 ){
+               //we have workUnits for this counter
+               _cumulativeTimers[_currentId].workUnits=workUnits;
+               _cumulativeTimers[_currentId].workUnitLabel=workUnitLabel;
+            }
+            else{
+               // no workUnits for this counter
+               _cumulativeTimers[_currentId].workUnits=-1.0;
+            }
+         }
             
-            //handle workUnits for _logTimers
-            if(_logTimers[_currentId].count!=0){
-               //if this, or a previous, stop did not include work units then do not add t hem
-               //work units have to be defined for all stops with a certain (full)label
-               if(workUnits<0 || _logTimers[_currentId].workUnits<0){
-                  _logTimers[_currentId].workUnits=-1;
-               }
-               else{
-                  _logTimers[_currentId].workUnits+=workUnits;
-               }
+         //handle workUnits for _logTimers
+         if(_logTimers[_currentId].count!=0){
+            //if this, or a previous, stop did not include work units then do not add t hem
+            //work units have to be defined for all stops with a certain (full)label
+            if(workUnits<0 || _logTimers[_currentId].workUnits<0){
+               _logTimers[_currentId].workUnits=-1;
             }
             else{
-               //firsttime, initialize workUnit stuff here
-               if(workUnits>=0.0 ){
-                  //we  have workUnits for this counter
-                  _logTimers[_currentId].workUnits=workUnits;
-                  _logTimers[_currentId].workUnitLabel=workUnitLabel;
-               }
-               else{
-                  //  no workUnits for this counter
-                  _logTimers[_currentId].workUnits=-1.0;
-               }
+               _logTimers[_currentId].workUnits+=workUnits;
             }
+         }
+         else{
+            //firsttime, initialize workUnit stuff here
+            if(workUnits>=0.0 ){
+               //we  have workUnits for this counter
+               _logTimers[_currentId].workUnits=workUnits;
+               _logTimers[_currentId].workUnitLabel=workUnitLabel;
+            }
+            else{
+               //  no workUnits for this counter
+               _logTimers[_currentId].workUnits=-1.0;
+            }
+         }
             
          //stop _cumulativeTimers & _logTimers timer              
-            _cumulativeTimers[_currentId].time+=(stopTime-_cumulativeTimers[_currentId].startTime);
-            _cumulativeTimers[_currentId].count++;
-            _cumulativeTimers[_currentId].active=false;
-            _logTimers[_currentId].time+=(stopTime-_logTimers[_currentId].startTime);
-            _logTimers[_currentId].count++;
-            _logTimers[_currentId].active=false;
+         _cumulativeTimers[_currentId].time+=(stopTime-_cumulativeTimers[_currentId].startTime);
+         _cumulativeTimers[_currentId].count++;
+         _cumulativeTimers[_currentId].active=false;
+         _logTimers[_currentId].time+=(stopTime-_logTimers[_currentId].startTime);
+         _logTimers[_currentId].count++;
+         _logTimers[_currentId].active=false;
             
       
-            //go down in hierarchy    
-            _currentId=_cumulativeTimers[_currentId].parentId;
-         }
+         //go down in hierarchy    
+         _currentId=_cumulativeTimers[_currentId].parentId;
       }
-      return success;
-   }
-
       
+      return success;
+
+   }
+   
+
+
+            //stop a timer defined by id
+   bool stop (int id) {
+
+      bool success=true;
+#pragma omp master
+      {
+         double stopTime=getTime();
+#ifdef DEBUG_PHIPROF_TIMERS         
+         if(id != _currentId ){
+            cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << _cumulativeTimers[_currentId].level << endl;
+            success=false;
+            return success;
+         }
+#endif
+            
+         //stop _cumulativeTimers & _logTimers timer              
+         _cumulativeTimers[_currentId].time+=(stopTime-_cumulativeTimers[_currentId].startTime);
+         _cumulativeTimers[_currentId].count++;
+         _cumulativeTimers[_currentId].active=false;
+         _logTimers[_currentId].time+=(stopTime-_logTimers[_currentId].startTime);
+         _logTimers[_currentId].count++;
+         _logTimers[_currentId].active=false;
+            
+      
+         //go down in hierarchy    
+         _currentId=_cumulativeTimers[_currentId].parentId;
+      }
+      
+      return success;
+
+   }
+   
+
    
    
    //get id number of a timer, return -1 if it does not exist

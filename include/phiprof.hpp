@@ -202,7 +202,7 @@ namespace phiprof
 
    
    /**
-   * Fastest
+   * Fastest stop routine for cases when no workunits are defined.
    */
    bool stop (int id);
 

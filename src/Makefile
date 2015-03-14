@@ -9,8 +9,12 @@ OUT_NO = ../lib/libnophiprof.a
 # include directories
 INCLUDES = -I../include
 
+#CLOCK_MONOTONIC_cOARSE is fastest, but is only available on newer linux kernels
+# see man clock_gettime
+CLOCK_ID = CLOCK_MONOTONIC_COARSE
+
 # C++ compiler flags 
-CCFLAGS = -O3 -fopenmp # -W -Wall -Wextra -pedantic 
+CCFLAGS = -O3 -fopenmp -DCLOCK_ID=$(CLOCK_ID) # -W -Wall -Wextra -pedantic 
 
 # compiler
 CCC = mpiCC

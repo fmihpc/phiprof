@@ -239,9 +239,12 @@ namespace phiprof
 	 return true;
       }
       
-      //this function returns the time in seconds 
+      //this function returns the time in seconds . 
       double getTime() {
-	 return MPI_Wtime();
+         struct timespec t;
+         //COARSE is not supported on Cray XC...
+         clock_gettime(CLOCK_ID,&t);
+	 return t.tv_sec + 1.0e-9 * t.tv_nsec;
       }
       //this function returns the accuracy of the timer     
       double getTick() {

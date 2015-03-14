@@ -30,10 +30,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <sstream>
 #include "phiprof.hpp"
-//include craypat api headers if compiled with craypat on Cray XT/XE
-#ifdef CRAYPAT
-#include "pat_api.h"
-#endif
+
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -58,7 +55,7 @@ namespace phiprof
   	 vector<int> childIds; //children of this timer
 	
 	 int level;  //what hierarchy level
-	 int count; //how many times have this been accumulated
+	 int64_t count; //how many times have this been accumulated
 	 double time; // total time accumulated
 	 double startTime; //Starting time of previous start() call
 
@@ -81,7 +78,7 @@ namespace phiprof
          vector<double> timeParentFraction;
          vector<bool> hasWorkUnits;
          vector<double> workUnitsSum;
-         vector<int> countSum;
+         vector<int64_t> countSum;
      	 vector<int> threadsSum;
       };
 
@@ -108,7 +105,7 @@ namespace phiprof
 
       //defines print-area widths for print() output
       const int _indentWidth=2; //how many spaces each level is indented
-      const int _floatWidth=10; //width of float fields;
+      const int _floatWidth=11; //width of float fields;
       const int _intWidth=6;   //width of int fields;
       const int _unitWidth=4;  //width of workunit label
       const int _levelWidth=5; //width of level label
@@ -376,7 +373,7 @@ namespace phiprof
          static vector<double> time;
          static vector<doubleRankPair> timeRank;
          static vector<double> workUnits;
-         static vector<int> count;
+         static vector<int64_t> count;
          static vector<int> threads;
 static vector<int> parentIndices;
          int currentIndex;
@@ -458,7 +455,7 @@ static vector<int> parentIndices;
                
                MPI_Reduce(&(workUnits[0]),&(stats.workUnitsSum[0]),nTimers,MPI_DOUBLE,MPI_SUM,0,comm);
                MPI_Reduce(&(workUnits[0]),&(workUnitsMin[0]),nTimers,MPI_DOUBLE,MPI_MIN,0,comm);
-               MPI_Reduce(&(count[0]),&(stats.countSum[0]),nTimers,MPI_INT,MPI_SUM,0,comm);
+               MPI_Reduce(&(count[0]),&(stats.countSum[0]),nTimers,MPI_INT64_T,MPI_SUM,0,comm);
                MPI_Reduce(&(threads[0]),&(stats.threadsSum[0]),nTimers,MPI_INT,MPI_SUM,0,comm);
                
                for(int i=0;i<nTimers;i++){
@@ -486,7 +483,7 @@ static vector<int> parentIndices;
                
                MPI_Reduce(&(workUnits[0]),NULL,nTimers,MPI_DOUBLE,MPI_SUM,0,comm);
                MPI_Reduce(&(workUnits[0]),NULL,nTimers,MPI_DOUBLE,MPI_MIN,0,comm);
-               MPI_Reduce(&(count[0]),NULL,nTimers,MPI_INT,MPI_SUM,0,comm);               
+               MPI_Reduce(&(count[0]),NULL,nTimers,MPI_INT64_T,MPI_SUM,0,comm);               
 	       MPI_Reduce(&(threads[0]),NULL,nTimers,MPI_INT,MPI_SUM,0,comm);
             }
             //clear temporary data structures

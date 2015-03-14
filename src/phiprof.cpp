@@ -245,10 +245,17 @@ namespace phiprof
          //COARSE is not supported on Cray XC...
          clock_gettime(CLOCK_ID,&t);
 	 return t.tv_sec + 1.0e-9 * t.tv_nsec;
+
+//	 return MPI_Wtime();    
       }
       //this function returns the accuracy of the timer     
       double getTick() {
-	 return MPI_Wtick();
+         struct timespec t;
+         //COARSE is not supported on Cray XC...
+         clock_getres(CLOCK_ID,&t);
+	 return t.tv_sec + 1.0e-9 * t.tv_nsec;
+
+//	 return MPI_Wtick();
       }
 
 
@@ -642,8 +649,9 @@ static vector<int> parentIndices;
          output << "Processes in set of timers " << nProcs;
 #ifdef _OPENMP
 	 output << " with (up to) " << omp_get_max_threads() << " threads ";
-#endif 
+#endif
          output<<endl;
+         output << "Timer resolution is "<< getTick() << endl;
          for(int i=0;i<totalWidth;i++) output <<"-";
          output<<endl;
          output<<setw(_levelWidth+1+groupWidth+1+labelWidth+1)<< setiosflags(ios::left) << "";

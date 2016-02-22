@@ -315,12 +315,12 @@ int TimerTree::constructTimer(const std::string &label,int parentId,const std::v
 
 
 //this function returns the time in seconds . 
-inline double TimerTree::wTime() {
+double TimerTree::wTime() {
    clock_gettime(CLOCK_ID,&t);
    return t.tv_sec + 1.0e-9 * t.tv_nsec;
 }
 //this function returns the accuracy of the timer     
-inline double TimerTree::wTick() {
+double TimerTree::wTick() {
    clock_getres(CLOCK_ID,&t);
    return t.tv_sec + 1.0e-9 * t.tv_nsec;
 } 

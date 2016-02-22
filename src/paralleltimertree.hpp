@@ -10,7 +10,7 @@
 
 class ParallelTimerTree: public TimerTree {
 public:
-ParallelTimerTree(MPI_Comm communicator): TimerTree() {}
+ParallelTimerTree(): TimerTree() {}
 
    
  //constructor

@@ -1,5 +1,5 @@
 # source files.
-SRC = phiprof.cpp phiprof_c.cpp
+SRC = phiprof.cpp paralleltimertree.cpp timertree.cpp #phiprof_c.cpp
 SRC_NO = nophiprof.cpp phiprof_c.cpp
 OBJ = $(SRC:.cpp=.o)
 OBJ_NO = $(SRC_NO:.cpp=.o)
@@ -47,5 +47,6 @@ clean:
 	rm -f $(OBJ) $(OUT) $(OBJ_NO) $(OUT_NO)
 
 phiprof.o: ../include/phiprof.hpp
+
 
 nophiprof.o: ../include/phiprof.hpp

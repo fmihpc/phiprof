@@ -29,7 +29,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <fstream>
 #include <sstream>
-#include "timertree.hpp"
+#include "paralleltimertree.hpp"
 #include "phiprof.hpp"
 
 
@@ -121,7 +121,8 @@ namespace phiprof
 
    int getId(const string &label){
       return parallelTimerTree.getId(label);
-      
+   }
+   
       
    void phiprofAssert(bool condition, const string error_message, const string  file, int line ) {
 #ifndef NDEBUG
@@ -132,7 +133,6 @@ namespace phiprof
             MPI_Comm_rank(MPI_COMM_WORLD, &rank);
             cerr << "ASSERT ERROR on process "<< rank << ": " << error_message      
                  << ", File: " << file << ", Line: " << line
-                 << ", phiproftimer:" << getFullLabel(_cumulativeTimers,_currentId,false)
                  << endl;       
             exit(1);
          }
@@ -140,7 +140,7 @@ namespace phiprof
 #endif
       return;
    }
-      
+   
 }
 
 

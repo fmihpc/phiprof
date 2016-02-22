@@ -3,6 +3,7 @@
 #include <limits>
 #include <algorithm>
 #include <time.h>
+#include <omp.h>
 #include "timerdata.h"
 #include "timertree.hpp"
 
@@ -263,7 +264,7 @@ std::string TimerTree::getFullLabel(int id,bool reverse){
 }
 
 //reset logtimes in timers to zero.
-void TimerTree::resetTime(double endPrintTime, int id=0){
+void TimerTree::resetTime(double endPrintTime, int id){
    timers[id].time=0;
    timers[id].count=0;
    timers[id].workUnits=0;
@@ -273,14 +274,10 @@ void TimerTree::resetTime(double endPrintTime, int id=0){
    }
 
    for(unsigned int i=0;i<timers[id].childIds.size();i++){
-      resetTime(endPrintTime,timers,timers[id].childIds[i]);
+      resetTime(endPrintTime, timers[id].childIds[i]);
    }
 }            
       
-
-         
-
-
 
 //Private
 

@@ -1,0 +1,134 @@
+#ifndef PARALLELTIMERTREE_H
+#define PARALLELTIMERTREE_H
+
+#include <vector>
+#include <string>
+#include <map>
+#include <fstream>
+#include "mpi.h"
+#include "timertree.hpp"
+
+class ParallelTimerTree: public TimerTree {
+public:
+ParallelTimerTree(MPI_Comm communicator): TimerTree() {
+   MPI_Comm_dup(communicator, &comm);
+   MPI_Comm_rank(comm,&rank);
+   MPI_Comm_size(comm,&nProcesses);
+
+
+}
+
+   
+ //constructor
+   /**
+    * Print the  current timer state in a human readable file
+    *
+    * This function will print the timer statistics in a text based
+    * hierarchical form into file(s), each unique set of hierarchical
+    * profiles (labels, hierarchy, workunits) will be written out to a
+    * separate file. This function will print the times since the
+    * ininitalization of phiprof in the first start call. It can be
+    * called multiple times, and will not close currently active
+    * timers. The time spent in active timers uptill the print call is
+    * taken into account, and the time spent in the print function will
+    * be corrected for in them.
+    *
+    *
+    * @param comm
+    *   Communicator for processes that print their profile.
+    * @param fileNamePrefix
+    *   (optional) Default value is "profile"
+    *   The first part of the filename where the profile is printed. Each
+    *   unique set of timers (label, hierarchy, workunits) will be
+    *   assigned a unique hash number and the profile will be written
+    *   out into a file called fileprefix_hash.txt
+    * @param minFraction
+    *   (optional) Default value is to print all timers
+    *   minFraction can be used to filter the timers being printed so
+    *   that only the ones with a meaningfull amount of time are
+    *   printed. Only timers with (timer time)/(total time)>=minFraction
+    *   are printed. If minfraction is <=0.0 then all timers are printed.
+    * @return
+    *   Returns true if pofile printed successfully.
+    */
+   bool print(std::string fileNamePrefix="profile", double minFraction=0.0);
+   
+private:
+   //used with MPI reduction operator
+   struct doubleRankPair {
+      double val;
+      int rank;
+   };
+
+   struct TimerStatistics {
+      std::vector<int> id; //id of the timer at this index in the statistics vectors
+      std::vector<int> level;
+      std::vector<double> timeSum;
+      std::vector<doubleRankPair> timeMax;
+      std::vector<doubleRankPair> timeMin;
+      std::vector<double> timeTotalFraction;
+      std::vector<double> timeParentFraction;
+      std::vector<bool> hasWorkUnits;
+      std::vector<double> workUnitsSum;
+      std::vector<int64_t> countSum;
+      std::vector<int> threadsSum;
+   };
+   TimerStatistics stats;
+   
+      
+   struct GroupStatistics {
+      std::vector<std::string> name; 
+      std::vector<double> timeSum;
+      std::vector<doubleRankPair> timeMax;
+      std::vector<doubleRankPair> timeMin;
+      std::vector<double> timeTotalFraction;
+   };
+   GroupStatistics groupStats;
+
+   void collectGroupStats();
+   void getGroupIds(std::map<std::string, std::string>  &groupIds, size_t &groupWidth);
+   void collectTimerStats(int reportRank,int id=0,int parentIndex=0);
+   void removePrintTime(double endPrintTime, int id=0);
+   
+   bool printTree(double minFraction,std::string fileName);
+   bool printTreeHeader(double minFraction, size_t labelWidth, size_t groupWidth, 
+                           int totalWidth, int nProcs, std::fstream &output);
+   bool printTreeTimerStatistics(double minFraction, size_t labelWidth, 
+                                 size_t groupWidth, int totalWidth,
+                                 const std::map<std::string,std::string> &groupIds, 
+                                 std::fstream &output);   
+   bool printTreeGroupStatistics(double minFraction,
+                                 size_t labelWidth,
+                                 size_t groupWidth,
+                                 int totalWidth,
+                                 const std::map<std::string, std::string> &groupIds,
+                                 std::fstream &output);
+   bool printTreeFooter(int totalWidth, std::fstream &output);
+   bool getPrintCommunicator(int &printIndex, int &timersHash);
+   
+
+   
+
+   MPI_Comm comm;
+   MPI_Comm printComm;
+   int numThreads;
+   int threadRank;
+   int rank;
+   int nProcesses;
+   int rankInPrint;
+   int nProcessesInPrint;
+
+   TimerTree timerTree;
+   double printStartTime;
+
+// Updated in collectStats, only valid on root rank
+   
+
+
+
+};
+
+
+
+
+#endif

@@ -3,18 +3,15 @@
 #define TIMERTREE_H
 
 #include <vector>
-#include <set>
-#include <map>
 #include "timerdata.h"
 
 class TimerTree {
 public:
    TimerTree(); //constructor
-   std::string getFullLabel(int id,bool reverse=false);  
    double getTime(int id);
    int getId(const std::string &label);
-   double getGroupTime(int id, std::string group);
-   int getHash();
+   double getGroupTime(std::string group, int id);
+
    
 
   /**
@@ -91,17 +88,21 @@ public:
    *   The id of the timer
    */
    int initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+   void resetTime(double endPrintTime, int id=0);
+   
+protected:
    int getHash(int id=0);
-
- private:
-   //current position in timer hierarchy 
+   std::string getFullLabel(int id,bool reverse=false);  
    int currentId;
    std::vector<TimerData> timers;
+   double wTime();
+   double wTick();
+private:
+   //current position in timer hierarchy 
    int constructTimer(const std::string &label, int parentId, const std::vector<std::string> groups);
    unsigned long hash(const char *str);
    //vector with timers, cumulative and for log print
-   double wTime();
-   double wTick();
+
    
 };
 

@@ -10,13 +10,7 @@
 
 class ParallelTimerTree: public TimerTree {
 public:
-ParallelTimerTree(MPI_Comm communicator): TimerTree() {
-   MPI_Comm_dup(communicator, &comm);
-   MPI_Comm_rank(comm,&rank);
-   MPI_Comm_size(comm,&nProcesses);
-
-
-}
+ParallelTimerTree(MPI_Comm communicator): TimerTree() {}
 
    
  //constructor
@@ -51,7 +45,7 @@ ParallelTimerTree(MPI_Comm communicator): TimerTree() {
     * @return
     *   Returns true if pofile printed successfully.
     */
-   bool print(std::string fileNamePrefix="profile", double minFraction=0.0);
+   bool print(MPI_Comm comm, std::string fileNamePrefix="profile", double minFraction=0.0);
    
 private:
    //used with MPI reduction operator
@@ -105,14 +99,9 @@ private:
                                  std::fstream &output);
    bool printTreeFooter(int totalWidth, std::fstream &output);
    bool getPrintCommunicator(int &printIndex, int &timersHash);
-   
-
-   
 
    MPI_Comm comm;
    MPI_Comm printComm;
-   int numThreads;
-   int threadRank;
    int rank;
    int nProcesses;
    int rankInPrint;

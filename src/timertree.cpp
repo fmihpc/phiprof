@@ -191,7 +191,7 @@ int TimerTree::getId(const std::string &label){
    return childId;
 }
 
-double TimerTree::getGroupTime(int id, std::string group){
+double TimerTree::getGroupTime(std::string group, int id){
    double groupTime=0.0;
    for (std::vector<std::string>::const_iterator g = timers[id].groups.begin(); g != timers[id].groups.end(); ++g ) {
       if(group==*g){
@@ -201,7 +201,7 @@ double TimerTree::getGroupTime(int id, std::string group){
    }
    //recursively collect time data   
    for(unsigned int i=0;i<timers[id].childIds.size();i++){
-      groupTime+=getGroupTime(timers[id].childIds[i], group);
+      groupTime+=getGroupTime( group, timers[id].childIds[i]);
    }
    return groupTime;
 }
@@ -261,6 +261,23 @@ std::string TimerTree::getFullLabel(int id,bool reverse){
    }
    return fullLabel;
 }
+
+//reset logtimes in timers to zero.
+void TimerTree::resetTime(double endPrintTime, int id=0){
+   timers[id].time=0;
+   timers[id].count=0;
+   timers[id].workUnits=0;
+                     
+   if(timers[id].active){
+      timers[id].startTime=endPrintTime;
+   }
+
+   for(unsigned int i=0;i<timers[id].childIds.size();i++){
+      resetTime(endPrintTime,timers,timers[id].childIds[i]);
+   }
+}            
+      
+
          
 
 
@@ -301,12 +318,12 @@ int TimerTree::constructTimer(const std::string &label,int parentId,const std::v
 
 
 //this function returns the time in seconds . 
-double TimerTree::wTime() {
+inline double TimerTree::wTime() {
    clock_gettime(CLOCK_ID,&t);
    return t.tv_sec + 1.0e-9 * t.tv_nsec;
 }
 //this function returns the accuracy of the timer     
-double TimerTree::wTick() {
+inline double TimerTree::wTick() {
    clock_getres(CLOCK_ID,&t);
    return t.tv_sec + 1.0e-9 * t.tv_nsec;
 } 

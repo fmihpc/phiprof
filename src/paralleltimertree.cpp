@@ -528,31 +528,33 @@ bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
 
 
 
-bool ParallelTimerTree::print(std::string fileNamePrefix,double minFraction){
-#pragma omp master
-   {
-      int timersHash,printIndex;
-
-      //printStartTime defined in namespace, used to correct timings for open timers
-      printStartTime=wTime();
-      MPI_Barrier(comm);
-         
-      //get hash value of timers and the print communicator
-      if(getPrintCommunicator(printIndex, timersHash)) {
-         //generate file name
-         std::stringstream fname;
-         fname << fileNamePrefix << "_" << printIndex << ".txt";
-         collectTimerStats(rank);
-         collectGroupStats();
-         printTree(minFraction,fname.str());
-      }
-         
-      MPI_Comm_free(&printComm);
-      MPI_Barrier(comm);
-         
-      double endPrintTime=wTime();
-      removePrintTime(endPrintTime, 0);
+bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,double minFraction){
+   int timersHash,printIndex;
+   
+   //printStartTime defined in namespace, used to correct timings for open timers
+   printStartTime=wTime();
+   comm = communicator; //no dup, we will only use it without
+   MPI_Comm_rank(comm, &rank);
+   MPI_Comm_size(comm, &nProcesses);
+   
+   MPI_Barrier(comm);
+   
+   //get hash value of timers and the print communicator
+   if(getPrintCommunicator(printIndex, timersHash)) {
+      //generate file name
+      std::stringstream fname;
+      fname << fileNamePrefix << "_" << printIndex << ".txt";
+      collectTimerStats(rank);
+      collectGroupStats();
+      printTree(minFraction,fname.str());
    }
+   
+   MPI_Comm_free(&printComm);
+   MPI_Barrier(comm);
+   
+   double endPrintTime=wTime();
+   removePrintTime(endPrintTime, 0);
+   
    return true;
 }
    

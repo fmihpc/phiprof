@@ -113,7 +113,7 @@ namespace phiprof
    *   Returns true if pofile printed successfully.
    */
 
-   bool print(MPI_Comm comm,std::string fileNamePrefix="profile",double minFraction=0.0);
+   bool print(MPI_Comm comm, std::string fileNamePrefix="profile", double minFraction=0.0);
    
     /**
    * Print the current timer state in a easily parsable format

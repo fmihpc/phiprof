@@ -26,8 +26,7 @@ TimerTree::TimerTree(){
 
 //djb2 hash function copied from
 //http://www.cse.yorku.ca/~oz/hash.html
-unsigned long TimerTree::hash(const char *str)
-{
+unsigned long TimerTree::hash(const char *str) const{
    unsigned long hash = 5381;
    int c;
    while ( (c = *str++) )
@@ -55,7 +54,7 @@ int TimerTree::initializeTimer(const std::string &label,const std::vector<std::s
 
 
 
-double TimerTree::getTime(int id){
+double TimerTree::getTime(int id) const{
    double time;
    time=timers[id].time;
    //add time uptill print for active timers
@@ -180,7 +179,7 @@ bool TimerTree::stop (int id) {
 }
       
 //get id number of a timer, return -1 if it does not exist
-int TimerTree::getId(const std::string &label){
+int TimerTree::getId(const std::string &label) const{
    //find child with this id
    int childId=-1;
    for(unsigned int i=0;i<timers[currentId].childIds.size();i++) {
@@ -192,7 +191,7 @@ int TimerTree::getId(const std::string &label){
    return childId;
 }
 
-double TimerTree::getGroupTime(std::string group, int id){
+double TimerTree::getGroupTime(std::string group, int id) const{
    double groupTime=0.0;
    for (std::vector<std::string>::const_iterator g = timers[id].groups.begin(); g != timers[id].groups.end(); ++g ) {
       if(group==*g){
@@ -212,7 +211,7 @@ double TimerTree::getGroupTime(std::string group, int id){
          
 //Hash value identifying all labels, groups and workunitlabels.
 //If any std::strings differ, hash should differ. Computed recursively in the same way as prints
-int TimerTree::getHash(int id){
+int TimerTree::getHash(int id) const{
    unsigned long hashValue;
    //add hash values from label, workunitlabel and groups. Everything has to match.
    hashValue=hash(timers[id].label.c_str());
@@ -237,7 +236,7 @@ int TimerTree::getHash(int id){
 
 //get full hierarchical name for a timer
 //can have either the timer-label first (reverse order), or last.
-std::string TimerTree::getFullLabel(int id,bool reverse){
+std::string TimerTree::getFullLabel(int id,bool reverse) const{
    //create a label with all hierarchical levels     
    std::vector<std::string> labels;
    while(id>0){
@@ -315,12 +314,12 @@ int TimerTree::constructTimer(const std::string &label,int parentId,const std::v
 
 
 //this function returns the time in seconds . 
-double TimerTree::wTime() {
+double TimerTree::wTime() const{
    clock_gettime(CLOCK_ID,&t);
    return t.tv_sec + 1.0e-9 * t.tv_nsec;
 }
 //this function returns the accuracy of the timer     
-double TimerTree::wTick() {
+double TimerTree::wTick() const{
    clock_getres(CLOCK_ID,&t);
    return t.tv_sec + 1.0e-9 * t.tv_nsec;
 } 

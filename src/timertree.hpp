@@ -8,9 +8,6 @@
 class TimerTree {
 public:
    TimerTree(); //constructor
-   double getTime(int id);
-   int getId(const std::string &label);
-   double getGroupTime(std::string group, int id);
 
    
 
@@ -90,17 +87,31 @@ public:
    int initializeTimer(const std::string &label,const std::vector<std::string> &groups);
    void resetTime(double endPrintTime, int id=0);
    
+   const TimerData& operator[](std::size_t id) const{
+      return timers[id];
+   }
+   
+   std::size_t size() const{
+      return timers.size();
+   }
+   
+   double getTime(int id) const;
+   int getId(const std::string &label) const;
+   double getGroupTime(std::string group, int id) const;
+   
+
+   
 protected:
-   int getHash(int id=0);
-   std::string getFullLabel(int id,bool reverse=false);  
+   int getHash(int id=0) const;
+   std::string getFullLabel(int id,bool reverse=false) const;  
    int currentId;
    std::vector<TimerData> timers;
-   double wTime();
-   double wTick();
+   double wTime() const;
+   double wTick() const;
 private:
    //current position in timer hierarchy 
    int constructTimer(const std::string &label, int parentId, const std::vector<std::string> groups);
-   unsigned long hash(const char *str);
+   unsigned long hash(const char *str) const;
    //vector with timers, cumulative and for log print
 
    

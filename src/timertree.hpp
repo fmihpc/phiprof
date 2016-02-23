@@ -1,15 +1,12 @@
-
 #ifndef TIMERTREE_H
 #define TIMERTREE_H
-
 #include <vector>
 #include "timerdata.h"
 
+
 class TimerTree {
 public:
-   TimerTree(); //constructor
-
-   
+   TimerTree(); //constructor   
 
   /**
    * Start a profiling timer.
@@ -86,7 +83,9 @@ public:
    */
    int initializeTimer(const std::string &label,const std::vector<std::string> &groups);
    void resetTime(double endPrintTime, int id=0);
+   void shiftActiveStartTime(double shiftTime, int id = 0);
    
+
    const TimerData& operator[](std::size_t id) const{
       return timers[id];
    }
@@ -98,20 +97,15 @@ public:
    double getTime(int id) const;
    int getId(const std::string &label) const;
    double getGroupTime(std::string group, int id) const;
-   
-
-   
-protected:
    int getHash(int id=0) const;
    std::string getFullLabel(int id,bool reverse=false) const;  
+
+private:
    int currentId;
    std::vector<TimerData> timers;
-   double wTime() const;
-   double wTick() const;
-private:
    //current position in timer hierarchy 
    int constructTimer(const std::string &label, int parentId, const std::vector<std::string> groups);
-   unsigned long hash(const char *str) const;
+   
    //vector with timers, cumulative and for log print
 
    

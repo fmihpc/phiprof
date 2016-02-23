@@ -2,13 +2,12 @@
 #include <string>
 #include <limits>
 #include <algorithm>
-#include <time.h>
 #include <omp.h>
+#include <iostream>
+
 #include "timerdata.h"
 #include "timertree.hpp"
-
-//time struct to get wall time
-struct timespec t;
+#include "common.hpp"
 
 //initialize profiler, called by first start/initializeTimer. This adds the root timer
 TimerTree::TimerTree(){
@@ -20,18 +19,6 @@ TimerTree::TimerTree(){
    int id=constructTimer("total",-1,group);
    //start root timer, is stopped in print.      
    start(id);
-}
-
-
-
-//djb2 hash function copied from
-//http://www.cse.yorku.ca/~oz/hash.html
-unsigned long TimerTree::hash(const char *str) const{
-   unsigned long hash = 5381;
-   int c;
-   while ( (c = *str++) )
-      hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-   return hash;
 }
 
 
@@ -85,7 +72,7 @@ bool TimerTree::start(int id){
 bool TimerTree::start(const std::string &label){
    //If the timer exists, then initializeTimer just returns its id, otherwise it is constructed.
    //Make the timer the current one
-   currentId=initializeTimer(label, std::vector<std::string>() );
+   currentId = initializeTimer(label, std::vector<std::string>() );
    //start timer
    timers[currentId].startTime=wTime();
    timers[currentId].active=true;
@@ -276,6 +263,19 @@ void TimerTree::resetTime(double endPrintTime, int id){
       resetTime(endPrintTime, timers[id].childIds[i]);
    }
 }            
+
+//remove, e.g., printtime from timings by pushing forward start_time
+void TimerTree::shiftActiveStartTime(double shiftTime, int id){
+   if(timers[id].active){
+      //push start time so that we push it forward
+      timers[id].startTime += shiftTime;
+      for(unsigned int i=0; i<timers[id].childIds.size(); i++){
+         shiftActiveStartTime(shiftTime, timers[id].childIds[i]);
+      }
+   }
+}
+
+
       
 
 //Private
@@ -303,7 +303,7 @@ int TimerTree::constructTimer(const std::string &label,int parentId,const std::v
    timerData.threads=omp_get_num_threads();
 #endif
    //timerData.work  UnitCount initialized in stop
-   //add timer, to both vectors   
+   //add timer, to both vectors
    timers.push_back(timerData);
    //add timer to tree, both in timers
    if(parentId!=-1){
@@ -312,15 +312,3 @@ int TimerTree::constructTimer(const std::string &label,int parentId,const std::v
    return timerData.id;
 }
 
-
-//this function returns the time in seconds . 
-double TimerTree::wTime() const{
-   clock_gettime(CLOCK_ID,&t);
-   return t.tv_sec + 1.0e-9 * t.tv_nsec;
-}
-//this function returns the accuracy of the timer     
-double TimerTree::wTick() const{
-   clock_getres(CLOCK_ID,&t);
-   return t.tv_sec + 1.0e-9 * t.tv_nsec;
-} 
-  

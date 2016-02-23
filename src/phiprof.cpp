@@ -17,8 +17,6 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
-#include "mpi.h"
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -32,7 +30,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include "paralleltimertree.hpp"
 #include "phiprof.hpp"
 
-
+#include "mpi.h"
 #ifdef _OPENMP
 #include "omp.h"
 #endif
@@ -48,7 +46,7 @@ namespace phiprof
    }
 
    int initializeTimer(const string &label,const vector<string> &groups){
-      parallelTimerTree.initializeTimer(label, groups);
+      return parallelTimerTree.initializeTimer(label, groups);
    }
    
 //initialize a timer, with a particular label belonging to a group
@@ -115,7 +113,7 @@ namespace phiprof
       return parallelTimerTree.stop(id);
    }
    bool print(MPI_Comm comm, std::string fileNamePrefix, double minFraction){
-      parallelTimerTree.print(comm, fileNamePrefix, minFraction);
+      return parallelTimerTree.print(comm, fileNamePrefix, minFraction);
    }
    
 

@@ -12,13 +12,12 @@
 
 class TimerData {
 public:
+   //threadcounts should be set before creating any objects
    TimerData(TimerData* parentTimer,
              const int &id, 
              const std::string &label, 
              const std::vector<std::string> &groups, 
              const std::string &workUnitLabel) : id(id), label(label), groups(groups), workUnitLabel(workUnitLabel) {
-      const int numThreads = omp_get_max_threads();
-
       if(parentTimer != NULL) {
          parentId = parentTimer->id;
          level = parentTimer->level + 1;
@@ -36,16 +35,34 @@ public:
       workUnits.assign(numThreads, 0.0 );
       active.assign(numThreads, false);
    }
+
+   //
+   static int setThreadCounts(){
+#ifdef _OPENMP
+#pragma omp single
+      numThreads = omp_get_max_threads();
+      if(omp_in_parallel()) {
+         thread = omp_get_thread_num();
+      }
+      else{
+#pragma omp parallel
+         thread = omp_get_thread_num();
+      }
+#else
+      numThreads = 1;
+      thread = 0;
+#endif
+   }
    
+   
+
    int start() {
-      const int thread = omp_get_thread_num();
       startTime[thread] = wTime();
       active[thread] = true;
       return id;
    }
 
    int stop(){
-      const int thread = omp_get_thread_num();
       time[thread] += (wTime() - startTime[thread]);
       count[thread]++;
       active[thread]=false;
@@ -53,7 +70,6 @@ public:
    }
 
    int stop(double addWorkUnits){
-      const int thread = omp_get_thread_num();
       double stopTime = wTime();
       workUnits[thread] += addWorkUnits;
       time[thread] += (stopTime - startTime[thread]);
@@ -63,7 +79,6 @@ public:
    }
 
    int stop(double addWorkUnits, const std::string &addWorkUnitLabel){
-      const int thread = omp_get_thread_num();
       double stopTime=wTime();
       
       if(count[thread]==0){ //set workUnitLabel the first time, the
@@ -187,10 +202,13 @@ public:
    
    
    
-   // private:
+private:
    const int id; // unique id identifying this timer (index for timers)
    const std::string label;          //print label 
-
+   static int numThreads;
+   static int thread;
+#pragma omp thread_private(thread)
+   
    int level;  //what hierarchy level
    int parentId;  //key of parent (id)
    std::vector<int> childIds; //children of this timer

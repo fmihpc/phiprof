@@ -1,6 +1,6 @@
 #ifndef TIMERDATA_H
 #define TIMERDATA_H
-
+#include <iostream>
 #include <vector>
 #include <string>
 #include <stdint.h>
@@ -53,8 +53,6 @@ public:
       thread = 0;
 #endif
    }
-   
-   
 
    int start() {
       startTime[thread] = wTime();
@@ -207,7 +205,7 @@ private:
    const std::string label;          //print label 
    static int numThreads;
    static int thread;
-#pragma omp thread_private(thread)
+#pragma omp threadprivate(thread)
    
    int level;  //what hierarchy level
    int parentId;  //key of parent (id)

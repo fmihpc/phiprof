@@ -23,6 +23,7 @@ const int _levelWidth=5; //width of level label
 
    
 
+
 //ParallelTimerTree::ParallelTimerTree(){
 //}
    
@@ -45,12 +46,12 @@ void ParallelTimerTree::collectGroupStats(){
    int totalIndex=0; //where we store the group for total time (called Total, in timer id=0)
    
    //construct std::map from groups to timers in group 
-   for(unsigned int id=0;id<timerTree.size();id++){
-      for (std::vector<std::string>::const_iterator group = timerTree[id].groups.begin();
-           group != timerTree[id].groups.end(); ++group ) {
-         groups[*group].push_back(id);
+   for(unsigned int id=0;id < size();id++){
+      for(auto &group: (*this)[id].getGroups() ){
+         groups[group].push_back(id);
       }
    }
+
    int nGroups=groups.size();
    groupStats.name.clear(); // we will use push_back to add names to this std::vector
    
@@ -61,7 +62,7 @@ void ParallelTimerTree::collectGroupStats(){
       if(group->first=="Total")
          totalIndex=groupStats.name.size();
       
-      groupTime=timerTree.getGroupTime(group->first, 0);
+      groupTime=getGroupTime(group->first, 0);
       groupStats.name.push_back(group->first);
       time.push_back(groupTime);
       in.val=groupTime;
@@ -126,39 +127,38 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
          
    //collect statistics
 
-   currentIndex=stats.id.size();
-         
-   double currentTime=timerTree.getTime(id);
+   currentIndex=stats.id.size();         
+   double currentTime=getTime(id);
          
    stats.id.push_back(id);
-   stats.level.push_back(timerTree[id].level);
+   stats.level.push_back((*this)[id].getLevel());
    
    time.push_back(currentTime);
    in.val=currentTime;
    in.rank=reportRank;
    timeRank.push_back(in);
-   count.push_back(timerTree[id].count);
-   threads.push_back(timerTree[id].threads);
-   workUnits.push_back(timerTree[id].workUnits);
+   count.push_back((*this)[id].getAverageCount());
+   threads.push_back((*this)[id].getThreads());
+   workUnits.push_back((*this)[id].getAverageWorkUnits());
    parentIndices.push_back(parentIndex);
          
    double childTime=0;
    //collect data for children. Also compute total time spent in children
-   for(unsigned int i=0;i<timerTree[id].childIds.size();i++){
-      childTime+=timerTree.getTime(timerTree[id].childIds[i]);
-      collectTimerStats(reportRank,timerTree[id].childIds[i],currentIndex);
+   for(auto &childId: (*this)[id].getChildIds()) {
+      childTime+=(*this)[childId].getAverageTime();
+      collectTimerStats(reportRank, childId, currentIndex);
    }
    
-   if(timerTree[id].childIds.size()>0){
+   if((*this)[id].getChildIds().size()>0){
       //Added timings for other time. These are assigned id=-1
       stats.id.push_back(-1);
-      stats.level.push_back(timerTree[timerTree[id].childIds[0]].level); //same level as children
+      stats.level.push_back((*this)[(*this)[id].getChildIds()[0]].getLevel()); //same level as children
       time.push_back(currentTime-childTime);
       in.val=currentTime-childTime;
       in.rank=reportRank;
       timeRank.push_back(in);
-      count.push_back(timerTree[id].count);
-      threads.push_back(timerTree[id].threads);
+      count.push_back((*this)[id].getAverageCount());
+      threads.push_back((*this)[id].getThreads());
       workUnits.push_back(-1);
       parentIndices.push_back(currentIndex);
    }
@@ -243,15 +243,13 @@ void ParallelTimerTree::getGroupIds(std::map<std::string, std::string> &groupIds
    groupIds.clear();
    groupWidth=6;
    //add groups to std::map
-   for(unsigned int id=0;id<timerTree.size();id++) {
-      size_t width = timerTree[id].groups.size();
-      groupWidth = std::max(width, groupWidth);               
-      for (std::vector<std::string>::const_iterator group = timerTree[id].groups.begin();
-           group != timerTree[id].groups.end(); ++group ) {
-         groupIds[*group] = *group;
+   for(unsigned int id=0; id< size(); id++) {
+      groupWidth = std::max((*this)[id].getGroups().size(), groupWidth);               
+      for(auto &group : (*this)[id].getGroups()){
+         groupIds[group] = group;
       }
    }
-   //assing letters
+   //assign letters
    int character = 65; // ASCII A, TODO skip after Z to a, see ascii table
    for(std::map<std::string, std::string>::const_iterator group = groupIds.begin();
        group != groupIds.end(); ++group) {
@@ -280,20 +278,19 @@ bool ParallelTimerTree::printTreeTimerStatistics(double minFraction, size_t labe
                
          if(id!=-1){
             //other label has no groups
-            for (std::vector<std::string>::const_iterator group = timerTree[id].groups.begin();
-                 group != timerTree[id].groups.end(); ++group) {
-               std::string groupId=groupIds.count(*group) ? groupIds.find(*group)->second : std::string();
+            for(auto &group : (*this)[id].getGroups()){
+               std::string groupId=groupIds.count(group) ? groupIds.find(group)->second : std::string();
                output << std::setw(1) << groupId;
                hasNoGroups = false;
             }
          }
                
          if(hasNoGroups) output << std::setw(groupWidth+1) << "";
-         else output << std::setw(groupWidth-timerTree[id].groups.size()+1) << "";
+         else output << std::setw(groupWidth-(*this)[id].getGroups().size()+1) << "";
 	       
          output << std::setw(indent) << "";
          if(id!=-1){
-            output << std::setw(labelWidth+1-indent) << std::setiosflags(std::ios::left) << timerTree[id].label;
+            output << std::setw(labelWidth+1-indent) << std::setiosflags(std::ios::left) << (*this)[id].getLabel();
          }
          else{
             output << std::setw(labelWidth+1-indent) << std::setiosflags(std::ios::left) << "Other";
@@ -326,7 +323,7 @@ bool ParallelTimerTree::printTreeTimerStatistics(double minFraction, size_t labe
                output << std::setw(_floatWidth) << 0;
                output << std::setw(_floatWidth) << 0;
             }
-            output << timerTree[id].workUnitLabel<<"/s";                     
+            output << (*this)[id].getWorkUnitLabel()<<"/s";                     
          }
          output<<std::endl;
       }
@@ -435,8 +432,8 @@ bool ParallelTimerTree::printTree(double minFraction, std::string fileName){
       if (output.good() == false)
          return false;
             
-      for (unsigned int i=0;i<timerTree.size();i++){
-         size_t width=timerTree[i].label.length()+(timerTree[i].level-1)*_indentWidth;
+      for (unsigned int i=0;i<size();i++){
+         size_t width=(*this)[i].getLabel().length()+((*this)[i].getLevel()-1)*_indentWidth;
          labelWidth=std::max(labelWidth,width);
       }
 
@@ -470,7 +467,7 @@ bool ParallelTimerTree::printTree(double minFraction, std::string fileName){
 bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
    int mySuccess=1;
    int success;
-   timersHash=timerTree.getHash();
+   timersHash=getHash();
    int result = MPI_Comm_split(comm, timersHash, 0, &printComm);
          
    if (result != MPI_SUCCESS) {
@@ -498,7 +495,7 @@ bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
 
    //check that the hashes at least have the same number of timers, just to be sure and to avoid crashes...
 
-   int nTimers=timerTree.size();
+   int nTimers=size();
    int maxTimers;
    int minTimers;
          
@@ -529,7 +526,15 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,
    MPI_Comm_rank(comm, &rank);
    MPI_Comm_size(comm, &nProcesses);
    MPI_Barrier(comm);
-   
+   /*
+   if(rank == 0) {
+      std::cout << "rank 0, timerdata 1: label" << (*this)[1].getLabel() << std::endl;
+      std::cout << "rank 0, timerdata 1: id" << (*this)[1].getId()  << std::endl;
+      std::cout << "rank 0, timerdata 1: parentid" << (*this)[1].getParentId()  << std::endl     ;
+      std::cout << "rank 0, timerdata 1: workunits" << (*this)[1].workUnitLabel  << std::endl     ;
+   }
+   */
+
    //get hash value of timers and the print communicator
    if(getPrintCommunicator(printIndex, timersHash)) {
       //generate file name
@@ -542,7 +547,7 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,
    MPI_Comm_free(&printComm);
    MPI_Barrier(comm);   
    double endPrintTime = wTime();
-   timerTree.shiftActiveStartTime(endPrintTime - printStartTime);
+   shiftActiveStartTime(endPrintTime - printStartTime);
    
    
    return true;

@@ -97,6 +97,41 @@ public:
       return sumTime / timedThreads;
    }
 
+   double getAverageWorkUnits() const {
+      double sumWorkUnits = 0.0;
+      int timedThreads = 0;
+      for(int i = 0; i < time.size(); i++){
+         if(count[i] > 0 || active[i]) {
+            timedThreads++;
+            sumWorkUnits += workUnits[i];
+         }
+      }
+      return sumWorkUnits / timedThreads;
+   }
+
+   int getAverageCount() const {
+      int sumCount = 0.0;
+      int timedThreads = 0;
+      for(int i = 0; i < time.size(); i++){
+         if(count[i] > 0 || active[i]) {
+            timedThreads++;
+            sumCount += count[i];
+         }
+      }
+      //TODO, should return double
+      return sumCount / timedThreads;
+   }
+
+   double getThreads() const {
+      int timedThreads = 0;
+      for(int i = 0; i < time.size(); i++){
+         if(count[i] > 0 || active[i]) {
+            timedThreads++;
+         }
+      }
+      return timedThreads;
+   }
+
    
 
 //Hash value identifying all labels, groups and workunitlabels.
@@ -152,7 +187,7 @@ public:
    
    
    
- private:
+   // private:
    const int id; // unique id identifying this timer (index for timers)
    const std::string label;          //print label 
 

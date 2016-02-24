@@ -13,12 +13,12 @@
 TimerTree::TimerTree(){
    std::vector<std::string> group;
    group.push_back("Total");
-   //no timer yet
-   currentId=-1;
+   currentId = -1;
    //mainId will be 0, parent is -1 (does not exist)
    timers.clear();
    timers.push_back(TimerData(NULL, 0, "total", group,""));
    timers[0].start();
+   currentId = 0;
 }
 
 //initialize a timer, with a particular label belonging to some groups
@@ -40,24 +40,32 @@ int TimerTree::initializeTimer(const std::string &label, const std::vector<std::
    }
 #pragma omp barrier   
    return id;
-
 }
    
 //start timer, with id
 bool TimerTree::start(int id){   
    bool success=true;
+#ifdef DEBUG_PHIPROF_TIMERS         
+   if(id > timers.size() ) {
+      std::cerr << "PHIPROF-ERROR: id is invalid, timer does not exist "<< std::endl;
+      return false;
+   }
+   std::vector<int> childIds = timers[currentId].getChildIds(); 
+   if ( std::find(childIds.begin(), childIds.end(), id) == childIds.end() ) {
+      std::cerr << "PHIPROF-ERROR: id "<< id << " is invalid, timer is not child of current timer "<< currentId << ":" <<timers[currentId].getLabel() << std::endl;
+      return false;
+   }
+#endif
    //start timer (currentId = id)
    currentId = timers[id].start();
-   return currentId == id;
-   
+   return (currentId == id);
 }
 
 //start timer, with label. This function syncronizes OpenMP.
 bool TimerTree::start(const std::string &label){
    //If the timer exists, then initializeTimer just returns its id, otherwise it is constructed.
-   //Make the timer the current one   
-   currentId = initializeTimer(label, std::vector<std::string>(), "");
-   return timers[currentId].start();
+   return start(initializeTimer(label, std::vector<std::string>(), ""));
+   
 }
 
 
@@ -66,9 +74,9 @@ bool TimerTree::stop (const int id)
 {
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId ){
-      cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].level << endl;
-      success=false;
-      return success;
+      std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].getLevel() << std::endl;
+      return false;
+      
    }
 #endif            
 
@@ -82,12 +90,12 @@ bool TimerTree::stop (int id,
    bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId ){
-      cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].level << endl;
-      success=false;
-      return success;
+      std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].getLevel() << std::endl;
+      return false;
+      
    }
 #endif
-   currentId = stop(currentId, workUnits);
+   currentId = timers[currentId].stop(workUnits);
    return true;
 }
 //stop a timer defined by id
@@ -97,18 +105,23 @@ bool TimerTree::stop (int id,
    bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId ){
-      cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].level << endl;
-      success=false;
-      return success;
+      std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].getLevel() << std::endl;
+      return false;
    }
 #endif
-   currentId = stop(currentId, workUnits, workUnitLabel);
+   currentId = timers[currentId].stop(workUnits, workUnitLabel);
    return true;
 }
    
 
 bool TimerTree::stop (const std::string &label)
 {
+#ifdef DEBUG_PHIPROF_TIMERS         
+   if(label != timers[currentId].getLabel() ){
+      std::cerr << "PHIPROF-ERROR: label missmatch in profile::stop Stopping \""<< label <<"\" but current is " << currentId <<":\"" << timers[currentId].getLabel()<<"\"" << std::endl;
+      return false;
+   }
+#endif
    currentId = timers[currentId].stop();
    return true;
 }
@@ -118,7 +131,13 @@ bool TimerTree::stop (const std::string &label)
 bool TimerTree::stop (const std::string &label,
                       const double workUnits,
                       const std::string &workUnitLabel){
-   currentId = stop(currentId, workUnits, workUnitLabel);
+#ifdef DEBUG_PHIPROF_TIMERS         
+   if(label != timers[currentId].getLabel() ){
+      std::cerr << "PHIPROF-ERROR: label missmatch in profile::stop Stopping \""<< label <<"\" but current is " << currentId <<":\"" << timers[currentId].getLabel()<<"\"" << std::endl;
+      return false;      
+   }
+#endif
+   currentId = timers[currentId].stop(workUnits, workUnitLabel);
    return true;
    
 }
@@ -129,6 +148,7 @@ bool TimerTree::stop (const std::string &label,
 int TimerTree::getChildId(const std::string &label) const{
    //find child with this id
    for(auto &childId : timers[currentId].getChildIds() ){
+      
       if (timers[childId].getLabel() == label){
          return childId;
       } 

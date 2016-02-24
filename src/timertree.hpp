@@ -111,7 +111,7 @@ public:
    int getHash(int id=0) const;
    std::string getFullLabel(int id,bool reverse=false) const;  
 
-private:
+protected:
    int currentId;
    std::vector<TimerData> timers;
 

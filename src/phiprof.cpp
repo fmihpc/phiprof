@@ -117,8 +117,8 @@ namespace phiprof
    }
    
 
-   int getId(const string &label){
-      return parallelTimerTree.getId(label);
+   int getChildId(const string &label){
+      return parallelTimerTree.getChildId(label);
    }
    
       

@@ -5,7 +5,7 @@
 #include <omp.h>
 #include <iostream>
 
-#include "timerdata.h"
+#include "timerdata.hpp"
 #include "timertree.hpp"
 #include "common.hpp"
 
@@ -16,138 +16,54 @@ TimerTree::TimerTree(){
    //no timer yet
    currentId=-1;
    //mainId will be 0, parent is -1 (does not exist)
-   int id=constructTimer("total",-1,group);
-   //start root timer, is stopped in print.      
-   start(id);
+   timers.clear();
+   timers.push_back(TimerData(NULL, 0, "total", group,""));
+   timers[0].start();
 }
-
-
-
 
 //initialize a timer, with a particular label belonging to some groups
 //returns id of new timer. If timer exists, then that id is returned.
-int TimerTree::initializeTimer(const std::string &label,const std::vector<std::string> &groups){
+//this function needs to be called by all (active) threads
+int TimerTree::initializeTimer(const std::string &label, const std::vector<std::string> &groups, std::string workUnit){
    //check if the global profiler is initialized
+   //master + barrier and not single to make sure one at a time is created
+   int id;
+   
+#pragma omp master
+   {
+      id = getChildId(label); //check if label exists as childtimer
+      if(id < 0) {
+         //does not exist, let's create it
+         id = timers.size(); //id for new timer
+         timers.push_back(TimerData(&(timers[currentId]), id, label, groups, workUnit));
+      }
+   }
+#pragma omp barrier   
+   return id;
 
-   int id=getId(label); //check if it exists
-   if(id>=0)
-      //do nothing if it exists      
-      return id; 
-   else
-      //create new timer if it did not exist
-      return constructTimer(label,currentId,groups);
 }
-
-
-
-
-double TimerTree::getTime(int id) const{
-   double time;
-   time=timers[id].time;
-   //add time uptill print for active timers
-   if(timers[id].active)
-      time+=wTime()-timers[id].startTime;
-   return time;
-}
-
    
 //start timer, with id
 bool TimerTree::start(int id){   
    bool success=true;
-#ifdef DEBUG_PHIPROF_TIMERS
-   if(currentId!=timers[id].parentId){
-      cerr << "PHIPROF-ERROR: Starting timer that is not a child of the current profiling region" <<endl;
-      success= false;
-      return success;        
-   }
-#endif
-   currentId=id;      
-   //start timer
-   timers[currentId].startTime=wTime();
-   timers[currentId].active=true;
-   return success;        
+   //start timer (currentId = id)
+   currentId = timers[id].start();
+   return currentId == id;
+   
 }
 
-//start timer, with label
+//start timer, with label. This function syncronizes OpenMP.
 bool TimerTree::start(const std::string &label){
    //If the timer exists, then initializeTimer just returns its id, otherwise it is constructed.
-   //Make the timer the current one
-   currentId = initializeTimer(label, std::vector<std::string>() );
-   //start timer
-   timers[currentId].startTime=wTime();
-   timers[currentId].active=true;
-   return true;        
+   //Make the timer the current one   
+   currentId = initializeTimer(label, std::vector<std::string>(), "");
+   return timers[currentId].start();
 }
 
-//stop with workunits
-bool TimerTree::stop (const std::string &label,
-                      const double workUnits,
-                      const std::string &workUnitLabel){
-   bool success=true;
-#ifdef DEBUG_PHIPROF_TIMERS         
-   if(label != timers[currentId].label ){
-      cerr << "PHIPROF-ERROR: label missmatch in profile::stop  when stopping "<< label <<
-         ". The started timer is "<< timers[currentId].label<< " at level " << timers[currentId].level << endl;
-      success=false;
-      return success;
-   }
-#endif
-   success=stop(currentId, workUnits, workUnitLabel);
-   return success;
-}
-
-//stop a timer defined by id
-bool TimerTree::stop (int id,
-                      double workUnits,
-                      const std::string &workUnitLabel){
-   bool success=true;
-   double stopTime=wTime();
-#ifdef DEBUG_PHIPROF_TIMERS         
-   if(id != currentId ){
-      cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].level << endl;
-      success=false;
-      return success;
-   }
-#endif
-   //handle workUnits for timers               
-   if(timers[currentId].count!=0){
-      //if this, or a previous, stop did not include work units then do not add them
-      //work units have to be defined for all stops with a certain (full)label
-      if(workUnits<0 || timers[currentId].workUnits<0){
-         timers[currentId].workUnits=-1;
-      }
-      else{
-         timers[currentId].workUnits+=workUnits;
-      }
-   }
-
-   else{
-      //firsttime, initialize workUnit stuff here
-      if(workUnits>=0.0 ){
-         //we have workUnits for this counter
-         timers[currentId].workUnits=workUnits;
-         timers[currentId].workUnitLabel=workUnitLabel;
-      }
-      else{
-         // no workUnits for this counter
-         timers[currentId].workUnits=-1.0;
-      }
-   }
-   //stop timers 
-   timers[currentId].time+=(stopTime-timers[currentId].startTime);
-   timers[currentId].count++;
-   timers[currentId].active=false;
-   //go down in hierarchy    
-   currentId=timers[currentId].parentId;
-   return success;
-}
-   
 
 
-//stop a timer defined by id
-bool TimerTree::stop (int id) {
-   bool success=true;
-   double stopTime=wTime();
+bool TimerTree::stop (const int id)
+{
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId ){
       cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].level << endl;
@@ -155,63 +71,107 @@ bool TimerTree::stop (int id) {
       return success;
    }
 #endif            
-   //stop timers 
-   timers[currentId].time+=(stopTime-timers[currentId].startTime);
-   timers[currentId].count++;
-   timers[currentId].active=false;
-   //go down in hierarchy    
-   currentId=timers[currentId].parentId;
 
-   return success;
+   currentId = timers[currentId].stop();
+   return true;
 }
+
+//stop a timer defined by id
+bool TimerTree::stop (int id,
+                      double workUnits){
+   bool success=true;
+#ifdef DEBUG_PHIPROF_TIMERS         
+   if(id != currentId ){
+      cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].level << endl;
+      success=false;
+      return success;
+   }
+#endif
+   currentId = stop(currentId, workUnits);
+   return true;
+}
+//stop a timer defined by id
+bool TimerTree::stop (int id,
+                      double workUnits,
+                      const std::string &workUnitLabel){
+   bool success=true;
+#ifdef DEBUG_PHIPROF_TIMERS         
+   if(id != currentId ){
+      cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].level << endl;
+      success=false;
+      return success;
+   }
+#endif
+   currentId = stop(currentId, workUnits, workUnitLabel);
+   return true;
+}
+   
+
+bool TimerTree::stop (const std::string &label)
+{
+   currentId = timers[currentId].stop();
+   return true;
+}
+
+
+//stop with workunits
+bool TimerTree::stop (const std::string &label,
+                      const double workUnits,
+                      const std::string &workUnitLabel){
+   currentId = stop(currentId, workUnits, workUnitLabel);
+   return true;
+   
+}
+
+
       
 //get id number of a timer, return -1 if it does not exist
-int TimerTree::getId(const std::string &label) const{
+int TimerTree::getChildId(const std::string &label) const{
    //find child with this id
-   int childId=-1;
-   for(unsigned int i=0;i<timers[currentId].childIds.size();i++) {
-      if (timers[timers[currentId].childIds[i]].label==label){
-         childId=timers[currentId].childIds[i];
-         break;
-      }
-   }
-   return childId;
+   for(auto &childId : timers[currentId].getChildIds() ){
+      if (timers[childId].getLabel() == label){
+         return childId;
+      } 
+   } 
+   //nothing found
+   return -1;
 }
+
+
+
+
+double TimerTree::getTime(int id) const{
+   return timers[id].getAverageTime();
+}
+
+
 
 double TimerTree::getGroupTime(std::string group, int id) const{
    double groupTime=0.0;
-   for (std::vector<std::string>::const_iterator g = timers[id].groups.begin(); g != timers[id].groups.end(); ++g ) {
-      if(group==*g){
-         groupTime=getTime(id);
+   for(auto &timerGroup : timers[id].getGroups()){
+      if(group == timerGroup){
+         groupTime = timers[id].getAverageTime();
          return groupTime; // do not collect for children when this is already in group.Avoid double counting
       }
    }
-   //recursively collect time data   
-   for(unsigned int i=0;i<timers[id].childIds.size();i++){
-      groupTime+=getGroupTime( group, timers[id].childIds[i]);
+   //recursively collect time data if possibly some children are in
+   //group 
+   for(auto &childId : timers[id].getChildIds()){
+      groupTime += getGroupTime(group, childId);
    }
    return groupTime;
 }
-      
-
-
          
 //Hash value identifying all labels, groups and workunitlabels.
 //If any std::strings differ, hash should differ. Computed recursively in the same way as prints
 int TimerTree::getHash(int id) const{
    unsigned long hashValue;
    //add hash values from label, workunitlabel and groups. Everything has to match.
-   hashValue=hash(timers[id].label.c_str());
-   hashValue+=hash(timers[id].workUnitLabel.c_str());
-   for (std::vector<std::string>::const_iterator g = timers[id].groups.begin();g != timers[id].groups.end(); ++g ) {
-      hashValue+=hash((*g).c_str());
+   hashValue = timers[id].getHash();
+   for(auto &childId : timers[id].getChildIds() ){
+      hashValue += timers[childId].getHash();
    }
-         
-   for(unsigned int i=0;i<timers[id].childIds.size();i++){
-      hashValue+=getHash(timers[id].childIds[i]);
-   }
-         
-         
+   
    // MPI_Comm_split needs a non-zero value
    if (hashValue == 0) {
       return 1;
@@ -227,88 +187,42 @@ std::string TimerTree::getFullLabel(int id,bool reverse) const{
    //create a label with all hierarchical levels     
    std::vector<std::string> labels;
    while(id>0){
-      labels.push_back(timers[id].label);
-      id=timers[id].parentId;
+      labels.push_back(timers[id].getLabel());
+      id = timers[id].getParentId();
    }
          
    std::string fullLabel;
    if(reverse){
-      std::vector<std::string>::iterator it;
-      for ( it=labels.begin() ; it != labels.end(); ++it ){
-         fullLabel+=*it;
-         fullLabel+="\\";   
+    
+      for (auto it=labels.begin() ; it != labels.end(); ++it ){
+         fullLabel += *it;
+         fullLabel += "\\";   
       }
    }
    else{
-      std::vector<std::string>::reverse_iterator rit;
-      for ( rit=labels.rbegin() ; rit != labels.rend(); ++rit ){
-         fullLabel+="/";
-         fullLabel+=*rit;
+      for (auto rit = labels.rbegin() ; rit != labels.rend(); ++rit ){
+         fullLabel += "/";
+         fullLabel += *rit;
       }
    }
    return fullLabel;
 }
 
-//reset logtimes in timers to zero.
-void TimerTree::resetTime(double endPrintTime, int id){
-   timers[id].time=0;
-   timers[id].count=0;
-   timers[id].workUnits=0;
-                     
-   if(timers[id].active){
-      timers[id].startTime=endPrintTime;
+//reset timers to zero.
+void TimerTree::resetTime(double resetWallTime, int id){
+   timers[id].resetTime(resetWallTime);
+   for(auto &childId : timers[id].getChildIds() ){
+      timers[childId].resetTime(resetWallTime);
    }
-
-   for(unsigned int i=0;i<timers[id].childIds.size();i++){
-      resetTime(endPrintTime, timers[id].childIds[i]);
-   }
-}            
+}
 
 //remove, e.g., printtime from timings by pushing forward start_time
 void TimerTree::shiftActiveStartTime(double shiftTime, int id){
-   if(timers[id].active){
-      //push start time so that we push it forward
-      timers[id].startTime += shiftTime;
-      for(unsigned int i=0; i<timers[id].childIds.size(); i++){
-         shiftActiveStartTime(shiftTime, timers[id].childIds[i]);
-      }
+   timers[id].shiftActiveStartTime(shiftTime);
+   for(auto &childId : timers[id].getChildIds() ){
+      timers[childId].shiftActiveStartTime(shiftTime);
    }
 }
 
 
       
-
-//Private
-
-
-
-int TimerTree::constructTimer(const std::string &label,int parentId,const std::vector<std::string> groups){
-   TimerData timerData;
-   timerData.label=label;
-   timerData.groups=groups;
-   timerData.id=timers.size(); //will be added last to timers vector
-   timerData.parentId=parentId;	 
-   timerData.workUnits=-1;
-   timerData.workUnitLabel="";
-   if(parentId!=-1) 
-      timerData.level=timers[parentId].level+1;
-   else //this is the special case when one adds the root timer
-      timerData.level=0;
-   timerData.time=0;
-   timerData.startTime=-1;
-   timerData.count=0;
-   timerData.active=false;
-   timerData.threads=1;
-#ifdef _OPENMP
-   timerData.threads=omp_get_num_threads();
-#endif
-   //timerData.work  UnitCount initialized in stop
-   //add timer, to both vectors
-   timers.push_back(timerData);
-   //add timer to tree, both in timers
-   if(parentId!=-1){
-      timers[parentId].childIds.push_back(timerData.id);
-   }
-   return timerData.id;
-}
-

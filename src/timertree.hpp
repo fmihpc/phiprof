@@ -1,7 +1,7 @@
 #ifndef TIMERTREE_H
 #define TIMERTREE_H
 #include <vector>
-#include "timerdata.h"
+#include "timerdata.hpp"
 
 
 class TimerTree {
@@ -53,12 +53,23 @@ public:
   bool stop (const std::string &label,
               double workUnits=-1.0,
               const std::string &workUnitLabel="");
+
+   bool stop (const std::string &label);
+   
    /**
-    * \overload  bool phiprof::stop(const std::string &label,double workUnits=-1.0,const std::string &workUnitLabel="")
+    * 
    */
    bool stop (int id,
               double workUnits,
               const std::string &workUnitLabel);
+
+   /**
+    * 
+   */
+   bool stop (int id,
+              double workUnits);
+   
+
    /**
    * Fastest stop routine for cases when no workunits are defined.
    */
@@ -81,7 +92,7 @@ public:
    * @return
    *   The id of the timer
    */
-   int initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+   int initializeTimer(const std::string &label, const std::vector<std::string> &groups, std::string workUnit = "");
    void resetTime(double endPrintTime, int id=0);
    void shiftActiveStartTime(double shiftTime, int id = 0);
    
@@ -95,7 +106,7 @@ public:
    }
    
    double getTime(int id) const;
-   int getId(const std::string &label) const;
+   int getChildId(const std::string &label) const;
    double getGroupTime(std::string group, int id) const;
    int getHash(int id=0) const;
    std::string getFullLabel(int id,bool reverse=false) const;  
@@ -103,10 +114,7 @@ public:
 private:
    int currentId;
    std::vector<TimerData> timers;
-   //current position in timer hierarchy 
-   int constructTimer(const std::string &label, int parentId, const std::vector<std::string> groups);
-   
-   //vector with timers, cumulative and for log print
+
 
    
 };

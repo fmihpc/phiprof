@@ -1,5 +1,5 @@
 # source files.
-SRC = timertree.cpp paralleltimertree.cpp  phiprof.cpp  #phiprof_c.cpp
+SRC = timerdata.cpp timertree.cpp paralleltimertree.cpp  phiprof.cpp  #phiprof_c.cpp
 SRC_NO = nophiprof.cpp phiprof_c.cpp
 OBJ = $(SRC:.cpp=.o)
 OBJ_NO = $(SRC_NO:.cpp=.o)
@@ -16,7 +16,7 @@ INCLUDES = -I../include
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -O3 -fopenmp -DCLOCK_ID=$(CLOCK_ID) # -W -Wall -Wextra -pedantic 
+CCFLAGS = -O3 -g -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) # -W -Wall -Wextra -pedantic 
 
 # compiler
 CCC = mpiCC
@@ -25,7 +25,7 @@ CCC = mpiCC
 LIBS = 
 
 # compile flags
-LDFLAGS = -O3 -lgomp
+LDFLAGS =  -lgomp 
 
 .SUFFIXES: .cpp
 

@@ -191,7 +191,7 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
          MPI_Reduce(&(threads[0]),&(stats.threadsSum[0]),nTimers,MPI_INT,MPI_SUM,0,printComm);
                
          for(int i=0;i<nTimers;i++){
-            if(workUnitsMin[i]<0)
+            if(stats.workUnitsSum[i] <= 0)
                stats.hasWorkUnits[i]=false;
             else
                stats.hasWorkUnits[i]=true;

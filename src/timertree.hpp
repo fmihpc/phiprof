@@ -41,8 +41,13 @@ public:
       }
 #endif
       //start timer (currentId = id)
-      currentId = timers[id].start();
-      return (currentId == id);
+      
+      int newId = timers[id].start();
+#pragma omp master
+      currentId = newId;
+      
+      return true;
+      
    }
 
 
@@ -76,7 +81,7 @@ public:
    
    /**
     * 
-   */
+    */
    bool stop (int id,
               double workUnits,
               const std::string &workUnitLabel);
@@ -98,7 +103,11 @@ public:
       }
 #endif            
       
-      currentId = timers[currentId].stop();
+      int newId = timers[id].stop();
+      //currentid only updated on master
+#pragma omp master
+      currentId = newId;
+      
       return true;
    }
    

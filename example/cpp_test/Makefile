@@ -6,7 +6,7 @@ OBJ = $(SRC:.cpp=.o)
 INCLUDES = 
 
 # C++ compiler flags (-g -O2 -Wall)
-CCFLAGS = -O3 -I../../include 
+CCFLAGS = -O3 -I../../include  -fopenmp
 LDFLAGS = -L../../lib -lphiprof -lgomp
 # compiler
 CCC = mpiCC

@@ -75,20 +75,34 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
    }
 
    //get width of each column. Spanned cells are divided over its
-   //columns equally (might not always give the tightest fit, TODO)
+   //columns equally 
    columnWidths.resize(nColumns);
    for(auto &row: table){
       uint countedColumns = 0;
       for(int j = 0; j <  row.size(); j++){
          uint span = row[j].second;
-         for(uint col = countedColumns; col  < countedColumns + span; col ++ ){
-            uint columnWidth = (row[j].first.length() + (span - 1) * delimeter.length()) / span;
-            columnWidths[col] = std::max(columnWidths[col], columnWidth);
+         uint requiredWidth = row[j].first.length(); //how much space
+                                                     //we need for cell
+         //compute how much is there in the merged columns
+         uint availableWidth = (span - 1 ) * delimeter.length(); 
+         for(uint col = countedColumns; col  < countedColumns + span; col++ ){
+            availableWidth += columnWidths[col];
+         }
+         
+         
+         if(availableWidth < requiredWidth) {
+            //not space for merged cell, add evenly width to the
+            //columns, with 1 more to the firsts if it cannot be
+            //divided equally
+            for(uint col = countedColumns; col  < countedColumns + span; col ++ ){
+               columnWidths[col] += (requiredWidth - availableWidth) / span;
+               if (col - countedColumns < (requiredWidth - availableWidth) % span){
+                  columnWidths[col]++; 
+               }
+            }
          }
          countedColumns += span;
       }
-
-      
    }
    
    //get total width of the table

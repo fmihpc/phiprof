@@ -6,14 +6,13 @@
 
 class PrettyPrintTable {
 public:
+   void addTitle(std::string const& title);
    void addHorizontalLine();
-   void addTitle(std::string& title);
-   void addElement(std::string element, uint span = 1, uint indentLevel = 0);
+   void addRow();
+   void addElement(std::string const& element, uint span = 1, uint indentLevel = 0);
    void addElement(int element, uint span = 1);
    void addElement(double element, uint span = 1);
-   void addRow();
-   void print(std::ofstream& file, std::string& delimeter);
-   
+   void print(std::ofstream& file, std::string const& delimeter = " | ");
 
 private:
    const int _indentWidth=2; //how many spaces each level is indented

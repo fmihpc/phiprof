@@ -7,12 +7,12 @@
 #include <algorithm>
 #include "prettyprinttable.hpp"
 
-void PrettyPrintTable::addTitle(std::string& newTitle){
+void PrettyPrintTable::addTitle(std::string const& newTitle){
    title = newTitle;
 }
 
 
-void PrettyPrintTable::addElement(std::string element, uint span, uint indentLevel ){
+void PrettyPrintTable::addElement(std::string const& element, uint span, uint indentLevel ){
    std::stringstream buffer;
    buffer << std::left;
    for(int i = 0; i < _indentWidth * indentLevel; i++)
@@ -60,7 +60,7 @@ void PrettyPrintTable::addRow(){
 }
 
 
-void PrettyPrintTable::print(std::ofstream& output, std::string& delimeter){
+void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter){
    uint nColumns;
    std::vector<uint> columnWidths;
    

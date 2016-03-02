@@ -70,8 +70,8 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
       nColumns = std::max(nColumns, rowColumns);
    }
 
-   //Compute width of each column. Spanned cells are divided over its
-   //columns equally 
+   //Compute width of each column. First only compute normal
+   //non-spanned cells
    columnWidths.resize(nColumns);
    for(auto &row: table){
       uint countedColumns = 0;
@@ -79,19 +79,36 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
          uint span = row[j].second;
          uint requiredWidth = row[j].first.length(); //how much space
                                                      //we need for cell
-         //compute how much is there in the merged columns
-         uint availableWidth = (span - 1 ) * delimeter.length(); 
-         for(uint col = countedColumns; col  < countedColumns + span; col++ ){
-            availableWidth += columnWidths[col];
+         if(span == 1) {
+            columnWidths[countedColumns] = std::max(columnWidths[countedColumns], requiredWidth);
          }
-         if(availableWidth < requiredWidth) {
-            //not space for merged cell, add evenly width to the
-            //columns, with 1 more to the firsts if it cannot be
-            //divided equally
-            for(uint col = countedColumns; col  < countedColumns + span; col ++ ){
-               columnWidths[col] += (requiredWidth - availableWidth) / span;
-               if (col - countedColumns < (requiredWidth - availableWidth) % span){
-                  columnWidths[col]++; 
+         countedColumns += span;
+      }
+   }
+   
+   //now compute widths for spanned cells and increase widths equally
+   //for all columns if needed
+   for(auto &row: table){
+      uint countedColumns = 0;
+      for(int j = 0; j <  row.size(); j++){
+         uint span = row[j].second;
+         if(span > 1) {
+            uint requiredWidth = row[j].first.length(); //how much
+                                                        //space we need for cell
+            //compute how much is there in the merged columns
+            uint availableWidth = (span - 1 ) * delimeter.length(); 
+            for(uint col = countedColumns; col  < countedColumns + span; col++ ){
+               availableWidth += columnWidths[col];
+            }
+            if(availableWidth < requiredWidth) {
+               //not space for merged cell, add evenly width to the
+               //columns, with 1 more to the firsts if it cannot be
+               //divided equally
+               for(uint col = countedColumns; col  < countedColumns + span; col ++ ){
+                  columnWidths[col] += (requiredWidth - availableWidth) / span;
+                  if (col - countedColumns < (requiredWidth - availableWidth) % span){
+                     columnWidths[col]++; 
+                  }
                }
             }
          }

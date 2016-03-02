@@ -306,7 +306,7 @@ bool ParallelTimerTree::printTree(double minFraction, std::ofstream &output){
       table.addElement("Time (s)",6);
       table.addElement("Calls",1);
       table.addElement("Workunit-rate",3);      
-      table.addRow();
+      table.addHorizontalLine();
       //row2
       table.addElement("Lvl",1);
       table.addElement("Grp",1);

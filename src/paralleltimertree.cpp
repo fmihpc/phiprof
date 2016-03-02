@@ -246,33 +246,47 @@ void ParallelTimerTree::getGroupIds(std::map<std::string, std::string> &groupIds
 
 
 
+
 //print groups
-bool ParallelTimerTree::printTreeGroupStatistics(double minFraction,
-                                                 const std::map<std::string, std::string> &groupIds,
-                                                 std::ofstream &output){
-   /*
-   for(int i=0;i<totalWidth/2 -4;i++) output <<"-";
-   output <<" Groups ";
-   for(int i=0;i<totalWidth/2 -3;i++) output <<"-";
-   output<<std::endl;
+bool ParallelTimerTree::printGroupStatistics(double minFraction,
+                                             const std::map<std::string, std::string> &groupIds,
+                                             std::ofstream &output){
+   
+   PrettyPrintTable table;
+   table.addTitle("Groups");
+   
+   
+   //print heders
+   table.addHorizontalLine();      
+   //row1
+   table.addElement("",2);
+   table.addElement("Time (s)",6);
+   table.addHorizontalLine();
+   //row2
+   table.addElement("Group",1);
+   table.addElement("Name",1);
+   table.addElement("Avg",1);      
+   table.addElement("% of total",1);      
+   table.addElement("Max time,rank",2);      
+   table.addElement("Min time,rank",2);      
+   table.addHorizontalLine();
 
    for(unsigned int i=0;i<groupStats.name.size();i++){            
       if(minFraction<=groupStats.timeTotalFraction[i]){
          std::string groupId= groupIds.count(groupStats.name[i]) ? groupIds.find(groupStats.name[i])->second : std::string();
-         output << std::setw(_levelWidth+1) << " ";
-         output << std::setw(groupWidth+1) << groupId;
-         output << std::setw(labelWidth+1) << groupStats.name[i];
-         output << std::setw(_floatWidth) << " ";
-         output << std::setw(_floatWidth) << groupStats.timeSum[i]/nProcesses;
-         output << std::setw(_floatWidth) << 100.0*groupStats.timeTotalFraction[i];
-         output << std::setw(_floatWidth) << groupStats.timeMax[i].val;
-         output << std::setw(_intWidth)   << groupStats.timeMax[i].rank;
-         output << std::setw(_floatWidth) << groupStats.timeMin[i].val;
-         output << std::setw(_intWidth)   << groupStats.timeMin[i].rank;
-         output << std::endl;
+         table.addRow();
+         table.addElement(groupId);
+         table.addElement(groupStats.name[i]);
+         table.addElement(groupStats.timeSum[i]/nProcessesInPrint);
+         table.addElement(100.0*groupStats.timeTotalFraction[i]);
+         table.addElement(groupStats.timeMax[i].val);
+         table.addElement(groupStats.timeMax[i].rank);
+         table.addElement(groupStats.timeMin[i].val);
+         table.addElement(groupStats.timeMin[i].rank);
       }
    }
-   */
+   table.addHorizontalLine();
+   table.print(output);
    return true;
 }
          
@@ -280,13 +294,12 @@ bool ParallelTimerTree::printTreeGroupStatistics(double minFraction,
       
 //print out global timers
 //If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
-bool ParallelTimerTree::printTree(double minFraction, std::ofstream &output){
+bool ParallelTimerTree::printTree(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
    int rank,nProcesses;
-   std::map<std::string, std::string> groupIds;
+
 
    if(rankInPrint==0){
       PrettyPrintTable table;
-      getGroupIds(groupIds);
 
       //print Title
       std::stringstream buffer;
@@ -297,6 +310,8 @@ bool ParallelTimerTree::printTree(double minFraction, std::ofstream &output){
 #endif
       table.addTitle(buffer.str());
       buffer.str("");
+
+
       
       //print heders
       table.addHorizontalLine();      
@@ -458,11 +473,14 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,
       collectGroupStats();
       if(rankInPrint==0){
          std::ofstream output;
+         std::map<std::string, std::string> groupIds;
+         getGroupIds(groupIds);
+
          output.open(fname.str(), std::fstream::out);
          if (output.good() == false)
             return false;
-         printTree(minFraction, output);
-         
+         printTree(minFraction, groupIds, output);
+         printGroupStatistics(minFraction, groupIds, output);
          output.close();
       }
    } 

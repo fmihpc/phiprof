@@ -81,11 +81,13 @@ private:
    void collectTimerStats(int reportRank,int id=0,int parentIndex=0);
 
    
-   bool printTree(double minFraction, std::ofstream &output);   
+   bool printTree(double minFraction, 
+                  const std::map<std::string, std::string> &groupIds,                  
+                  std::ofstream &output);   
    
-   bool printTreeGroupStatistics(double minFraction,
-                                 const std::map<std::string, std::string> &groupIds,
-                                 std::ofstream &output);
+   bool printGroupStatistics(double minFraction,
+                             const std::map<std::string, std::string> &groupIds,
+                             std::ofstream &output);
 
    bool getPrintCommunicator(int &printIndex, int &timersHash);
 

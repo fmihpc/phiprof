@@ -8,26 +8,15 @@
 #include <algorithm>
 #include <time.h>
 #include "paralleltimertree.hpp"
+#include "prettyprinttable.hpp"
 #include "common.hpp"
+
 #ifdef _OPENMP
 #include "omp.h"
 #endif
 #include "mpi.h"
-//defines print-area widths for print() output
-const int _indentWidth=2; //how many spaces each level is indented
-const int _floatWidth=11; //width of float fields;
-const int _intWidth=6;   //width of int fields;
-const int _unitWidth=4;  //width of workunit label
-const int _levelWidth=5; //width of level label
-
 
    
-
-
-//ParallelTimerTree::ParallelTimerTree(){
-//}
-   
-
 
 
 ////-------------------------------------------------------------------------
@@ -239,12 +228,10 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
 
 // Creating std::map of group names to group one-letter ID
 // We assume same timers exists in all timer std::vectors, so can use just one here
-void ParallelTimerTree::getGroupIds(std::map<std::string, std::string> &groupIds,size_t &groupWidth){
+void ParallelTimerTree::getGroupIds(std::map<std::string, std::string> &groupIds){
    groupIds.clear();
-   groupWidth=6;
    //add groups to std::map
    for(unsigned int id=0; id< size(); id++) {
-      groupWidth = std::max((*this)[id].getGroups().size(), groupWidth);               
       for(auto &group : (*this)[id].getGroups()){
          groupIds[group] = group;
       }
@@ -255,140 +242,15 @@ void ParallelTimerTree::getGroupIds(std::map<std::string, std::string> &groupIds
        group != groupIds.end(); ++group) {
       groupIds[group->first] = character++;
    }
-      
 }
 
 
-//print all timers in stats
-bool ParallelTimerTree::printTreeTimerStatistics(double minFraction, size_t labelWidth, size_t groupWidth, int totalWidth,
-                                                 const std::map<std::string,std::string> &groupIds,  std::fstream &output){
-   
-   for(int i = 0; i < totalWidth / 2 - 5; i++) output <<"-";
-   output << " Profile ";
-   for(int i = 0; i < totalWidth / 2 - 5; i++) output <<"-";
-   output << std::endl;
-
-   for(unsigned int i = 1; i < stats.id.size(); i++){
-      int id = stats.id[i];
-      if(stats.timeTotalFraction[i] >= minFraction){
-         //print timer if enough time is spent in it
-         bool hasNoGroups = true;
-         int indent=(stats.level[i]-1)*_indentWidth;
-         output << std::setw(_levelWidth+1) << stats.level[i];
-               
-         if(id!=-1){
-            //other label has no groups
-            for(auto &group : (*this)[id].getGroups()){
-               std::string groupId=groupIds.count(group) ? groupIds.find(group)->second : std::string();
-               output << std::setw(1) << groupId;
-               hasNoGroups = false;
-            }
-         }
-               
-         if(hasNoGroups) output << std::setw(groupWidth+1) << "";
-         else output << std::setw(groupWidth-(*this)[id].getGroups().size()+1) << "";
-	       
-         output << std::setw(indent) << "";
-         if(id!=-1){
-            output << std::setw(labelWidth+1-indent) << std::setiosflags(std::ios::left) << (*this)[id].getLabel();
-         }
-         else{
-            output << std::setw(labelWidth+1-indent) << std::setiosflags(std::ios::left) << "Other";
-         }
-
-         output << std::setw(_floatWidth+1) << stats.threadsSum[i]/nProcesses;        	       
-         output << std::setw(_floatWidth) << stats.timeSum[i]/nProcesses;
-         output << std::setw(_floatWidth) << 100.0*stats.timeParentFraction[i];
-         output << std::setw(_floatWidth) << stats.timeMax[i].val;
-         output << std::setw(_intWidth)   << stats.timeMax[i].rank;
-         output << std::setw(_floatWidth) << stats.timeMin[i].val;
-         output << std::setw(_intWidth)   << stats.timeMin[i].rank;
-         output << std::setw(_floatWidth) << stats.countSum[i]/nProcesses;
-
-         if(stats.hasWorkUnits[i]){
-            //print if units defined for all processes
-            //note how the total rate is computed. This is to avoid one process with little data to     
-            //skew results one way or the other                        
-            if(stats.timeSum[i]>0){
-               output << std::setw(_floatWidth) << nProcesses*(stats.workUnitsSum[i]/stats.timeSum[i]);
-               output << std::setw(_floatWidth) << stats.workUnitsSum[i]/stats.timeSum[i];
-            }
-            else if (stats.workUnitsSum[i]>0){
-               //time is zero
-               output << std::setw(_floatWidth) << "inf";
-               output << std::setw(_floatWidth) << "inf";
-            }
-            else {
-               //zero time zero units
-               output << std::setw(_floatWidth) << 0;
-               output << std::setw(_floatWidth) << 0;
-            }
-            output << (*this)[id].getWorkUnitLabel()<<"/s";                     
-         }
-         output<<std::endl;
-      }
-            
-   }
-   return true;
-}
-      
-
-bool ParallelTimerTree::printTreeFooter(int totalWidth,std::fstream &output){
-   for(int i=0;i<totalWidth;i++) output <<"-";
-   output<<std::endl;
-   return true;
-}
-      
-bool ParallelTimerTree::printTreeHeader(double minFraction,size_t labelWidth,size_t groupWidth,int totalWidth,int nProcs,std::fstream &output){
-   for(int i=0;i<totalWidth;i++) output <<"-";
-   output<<std::endl;
-   output << "Phiprof results with time fraction of total time larger than " << minFraction;
-   output<<std::endl;
-   output << "Processes in set of timers " << nProcs;
-#ifdef _OPENMP
-   output << " with (up to) " << omp_get_max_threads() << " threads ";
-#endif
-   output<<std::endl;
-   output << "Timer resolution is "<< wTick() << std::endl;
-   for(int i=0;i<totalWidth;i++) output <<"-";
-   output<<std::endl;
-   output<<std::setw(_levelWidth+1+groupWidth+1+labelWidth+1)<< std::setiosflags(std::ios::left) << "";
-   output<<std::setw(_floatWidth)<< "Threads";
-   output<<std::setw(4*_floatWidth+2*_intWidth) <<"Time(s)";
-   output<<std::setw(_floatWidth)<<"Calls";
-   output<<std::setw(2*_floatWidth)<<"Workunit-rate";
-   output<<std::endl;
-   output<<std::setw(_levelWidth+1)<< "Level";	    
-   output<<std::setw(groupWidth+1)<< "Groups";
-//         output << std::setw(1) << "|";
-   output<<std::setw(labelWidth+1)<< "Label";
-//         output << std::setw(1) << "|";
-   //  time
-   output<<std::setw(_floatWidth) <<"Average";
-   output<<std::setw(_floatWidth) <<"Average";
-   output<<std::setw(_floatWidth) <<"parent %";
-   output<<std::setw(_floatWidth) <<"Maximum";
-   output<<std::setw(_intWidth) << "Rank";
-   output<<std::setw(_floatWidth)<< "Minimum";
-   output<<std::setw(_intWidth) << "Rank";
-   //call count
-   output<<std::setw(_floatWidth) << "Average";
-   // workunit rate    
-   output<<std::setw(_floatWidth) << "Average";
-   output<<std::setw(_floatWidth) << "Per process";
-   output<<std::endl;
-      
-   return true;
-}
 
 //print groups
 bool ParallelTimerTree::printTreeGroupStatistics(double minFraction,
-                                                 size_t labelWidth,
-                                                 size_t groupWidth,
-                                                 int totalWidth,
                                                  const std::map<std::string, std::string> &groupIds,
-                                                 std::fstream &output){
-   
+                                                 std::ofstream &output){
+   /*
    for(int i=0;i<totalWidth/2 -4;i++) output <<"-";
    output <<" Groups ";
    for(int i=0;i<totalWidth/2 -3;i++) output <<"-";
@@ -410,7 +272,7 @@ bool ParallelTimerTree::printTreeGroupStatistics(double minFraction,
          output << std::endl;
       }
    }
-
+   */
    return true;
 }
          
@@ -418,46 +280,106 @@ bool ParallelTimerTree::printTreeGroupStatistics(double minFraction,
       
 //print out global timers
 //If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
-bool ParallelTimerTree::printTree(double minFraction, std::string fileName){
+bool ParallelTimerTree::printTree(double minFraction, std::ofstream &output){
    int rank,nProcesses;
    std::map<std::string, std::string> groupIds;
-   size_t labelWidth=0;    //width of column with timer labels
-   size_t groupWidth=0;    //width of column with group letters
-   int totalWidth=6;       //total width of the table
-         
-   //compute labelWidth
-   if(rankInPrint==0){
-      std::fstream output;
-      output.open(fileName.c_str(), std::fstream::out);
-      if (output.good() == false)
-         return false;
-            
-      for (unsigned int i=0;i<size();i++){
-         size_t width=(*this)[i].getLabel().length()+((*this)[i].getLevel()-1)*_indentWidth;
-         labelWidth=std::max(labelWidth,width);
-      }
 
-      getGroupIds(groupIds,groupWidth);
-	    
-      //make sure we use default floats, and not fixed or other format
-      output <<std::setiosflags( std::ios::floatfield );
-      //set       float p  rec  ision
-      output <<std::setprecision(_floatWidth-6); //6 is needed for ".", "e+xx" and a space
-            
-      unsigned int labelDelimeterWidth=2;
-      totalWidth=_levelWidth+1+groupWidth+1+labelWidth+1+labelDelimeterWidth+_floatWidth*7+_intWidth*2+_unitWidth;
-         
-      //print header 
-      printTreeHeader(minFraction,labelWidth,groupWidth,totalWidth,nProcesses,output);
+   if(rankInPrint==0){
+      PrettyPrintTable table;
+      getGroupIds(groupIds);
+
+      //print Title
+      std::stringstream buffer;
+      buffer << "Time fraction greater than " << minFraction;
+      buffer << " Processes in profile " << nProcessesInPrint;
+#ifdef _OPENMP
+      buffer << " with " << omp_get_max_threads() << " threads ";
+#endif
+      table.addTitle(buffer.str());
+      buffer.str("");
+      
+      //print heders
+      table.addHorizontalLine();      
+      //row1
+      table.addElement("",3);
+      table.addElement("Threads",1);
+      table.addElement("Time (s)",6);
+      table.addElement("Calls",1);
+      table.addElement("Workunit-rate",3);      
+      table.addRow();
+      //row2
+      table.addElement("Lvl",1);
+      table.addElement("Grp",1);
+      table.addElement("Label",1);
+      table.addElement("Avg",1);
+      table.addElement("Avg",1);      
+      table.addElement("%",1);      
+      table.addElement("Max time,rank",2);      
+      table.addElement("Min time,rank",2);      
+      table.addElement("Avg",1);      
+      table.addElement("Total",1);     
+      table.addElement("Per process",1);       
+      table.addElement("Unit",1);       
+      table.addHorizontalLine();
+
       //print out all labels recursively
-      printTreeTimerStatistics(minFraction,labelWidth,groupWidth,totalWidth,groupIds,output);
-      //print groups
-      printTreeGroupStatistics(minFraction,labelWidth,groupWidth,totalWidth,groupIds,output);
-      //print footer  
-      printTreeFooter(totalWidth,output);
-      // start root timer again in case we continue and call print several times
-      output.close();
-            
+      for(unsigned int i = 1; i < stats.id.size(); i++){
+         int id = stats.id[i];
+         if(stats.timeTotalFraction[i] >= minFraction){
+            //print timer if enough time is spent in it
+            table.addElement(stats.level[i]);
+            if(id != -1) {
+               //normal timer, not "other" timer
+               //get and print group ids
+               buffer.str("");
+               for(auto &group : (*this)[id].getGroups()){
+                  std::string groupId=groupIds.count(group) ? groupIds.find(group)->second : std::string();
+                  buffer << groupId;
+               }
+               table.addElement(buffer.str());
+               table.addElement((*this)[id].getLabel(), 1, stats.level[i]-1);
+            }
+            else{
+               table.addElement(""); // no groups
+               table.addElement("Other", 1, stats.level[i]-1);
+            }
+            table.addElement(stats.threadsSum[i]/nProcessesInPrint);
+            table.addElement(stats.timeSum[i]/nProcessesInPrint);
+            table.addElement(100.0*stats.timeParentFraction[i]);
+            table.addElement(stats.timeMax[i].val);            
+            table.addElement(stats.timeMax[i].rank);
+            table.addElement(stats.timeMin[i].val);
+            table.addElement(stats.timeMin[i].rank);
+            table.addElement(stats.countSum[i]/nProcessesInPrint);
+
+            if(stats.hasWorkUnits[i]){
+               //print if units defined for all processes
+               //note how the total rate is computed. This is to avoid one process with little data to     
+               //skew results one way or the other                        
+               if(stats.timeSum[i]>0){
+                  table.addElement(nProcessesInPrint*(stats.workUnitsSum[i]/stats.timeSum[i]));
+                  table.addElement(stats.workUnitsSum[i]/stats.timeSum[i]);
+               }
+               else if (stats.workUnitsSum[i]>0){
+                  //time is zero
+                  table.addElement("inf");
+                  table.addElement("inf");
+               }
+               else {
+                  //zero time zero units
+                  table.addElement(0);
+                  table.addElement(0);
+               }
+               buffer.str("");
+               buffer << (*this)[id].getWorkUnitLabel()<<"/s";                     
+               table.addElement(buffer.str());
+            }
+            table.addRow();
+         }
+      }
+      
+      table.addHorizontalLine();
+      table.print(output);
    }
    return true;
 }
@@ -519,21 +441,13 @@ bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
 
 bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,double minFraction){
    int timersHash,printIndex;
-   
+         
    //printStartTime defined in namespace, used to correct timings for open timers
    printStartTime = wTime();
    comm = communicator; //no dup, we will only use it without
    MPI_Comm_rank(comm, &rank);
    MPI_Comm_size(comm, &nProcesses);
    MPI_Barrier(comm);
-   /*
-   if(rank == 0) {
-      std::cout << "rank 0, timerdata 1: label" << (*this)[1].getLabel() << std::endl;
-      std::cout << "rank 0, timerdata 1: id" << (*this)[1].getId()  << std::endl;
-      std::cout << "rank 0, timerdata 1: parentid" << (*this)[1].getParentId()  << std::endl     ;
-      std::cout << "rank 0, timerdata 1: workunits" << (*this)[1].workUnitLabel  << std::endl     ;
-   }
-   */
 
    //get hash value of timers and the print communicator
    if(getPrintCommunicator(printIndex, timersHash)) {
@@ -542,7 +456,15 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,
       fname << fileNamePrefix << "_" << printIndex << ".txt";
       collectTimerStats(rank);
       collectGroupStats();
-      printTree(minFraction,fname.str());
+      if(rankInPrint==0){
+         std::ofstream output;
+         output.open(fname.str(), std::fstream::out);
+         if (output.good() == false)
+            return false;
+         printTree(minFraction, output);
+         
+         output.close();
+      }
    } 
    MPI_Comm_free(&printComm);
    MPI_Barrier(comm);   

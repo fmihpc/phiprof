@@ -24,13 +24,9 @@ void PrettyPrintTable::addElement(std::string const& element, uint span, uint in
    table.back().push_back(std::make_pair(buffer.str(), span));
 }
 
-void PrettyPrintTable::addElement(int element, uint span){
-   std::stringstream buffer;
-   buffer << element;
-   if(table.size() == 0) {
-      addRow();
-   }
-   table.back().push_back(std::make_pair(buffer.str(), span));
+
+void PrettyPrintTable::addElement(float element, uint span){
+   addElement((double)element, span);
 }
 
 void PrettyPrintTable::addElement(double element, uint span){
@@ -47,8 +43,8 @@ void PrettyPrintTable::addElement(double element, uint span){
 
 
 void PrettyPrintTable::addHorizontalLine(){
-   //we mark a line via empty row
    addRow();
+   addElement("---"); //mark horizontal line
    addRow();
 }
 
@@ -74,7 +70,7 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
       nColumns = std::max(nColumns, rowColumns);
    }
 
-   //get width of each column. Spanned cells are divided over its
+   //Compute width of each column. Spanned cells are divided over its
    //columns equally 
    columnWidths.resize(nColumns);
    for(auto &row: table){
@@ -88,8 +84,6 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
          for(uint col = countedColumns; col  < countedColumns + span; col++ ){
             availableWidth += columnWidths[col];
          }
-         
-         
          if(availableWidth < requiredWidth) {
             //not space for merged cell, add evenly width to the
             //columns, with 1 more to the firsts if it cannot be
@@ -123,8 +117,11 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
    //Output the table
    output << std::left;
    for(auto &row: table){
-      if(row.size() == 0){
-         //empty row => print line
+      if(row.size() == 0) {
+         continue; //skip empty rows
+      }
+      
+      if(row.size() == 1 && row[0].first=="---"){
          output << std::setw(1);
          for (int j = 0; j < totWidth; j++) {
             output << "-";
@@ -151,7 +148,6 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
             else {
                output << std::setw(width) << row[j].first;
             }
-            
             output << delimeter;
             printedColumns += span;
          }
@@ -161,6 +157,7 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
             output << delimeter;
          }
       }
+      
       output<< "\n";
    }
    

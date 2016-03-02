@@ -77,24 +77,16 @@ private:
    GroupStatistics groupStats;
 
    void collectGroupStats();
-   void getGroupIds(std::map<std::string, std::string>  &groupIds, size_t &groupWidth);
+   void getGroupIds(std::map<std::string, std::string>  &groupIds);
    void collectTimerStats(int reportRank,int id=0,int parentIndex=0);
 
    
-   bool printTree(double minFraction,std::string fileName);
-   bool printTreeHeader(double minFraction, size_t labelWidth, size_t groupWidth, 
-                           int totalWidth, int nProcs, std::fstream &output);
-   bool printTreeTimerStatistics(double minFraction, size_t labelWidth, 
-                                 size_t groupWidth, int totalWidth,
-                                 const std::map<std::string,std::string> &groupIds, 
-                                 std::fstream &output);   
+   bool printTree(double minFraction, std::ofstream &output);   
+   
    bool printTreeGroupStatistics(double minFraction,
-                                 size_t labelWidth,
-                                 size_t groupWidth,
-                                 int totalWidth,
                                  const std::map<std::string, std::string> &groupIds,
-                                 std::fstream &output);
-   bool printTreeFooter(int totalWidth, std::fstream &output);
+                                 std::ofstream &output);
+
    bool getPrintCommunicator(int &printIndex, int &timersHash);
 
    MPI_Comm comm;

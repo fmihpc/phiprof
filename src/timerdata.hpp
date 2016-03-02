@@ -28,7 +28,6 @@ public:
          parentId = -1;
          level = 0;
       }
-
       count.assign(numThreads, 0);
       time.assign(numThreads, 0.0);
       startTime.assign(numThreads, -1);
@@ -92,7 +91,7 @@ public:
       active[thread]=false;
       return parentId;
    }
-
+   
    double getAverageTime() const {
       double sumTime = 0.0;
       int timedThreads = 0;
@@ -103,7 +102,6 @@ public:
             //add time uptill now for active timers
             if(active[i]) {
                sumTime += wTime()- startTime[i];
-               
             }
          }
       }
@@ -187,9 +185,6 @@ public:
       }
    }
 
-
-
-
    const std::string& getLabel() const { return label;}
    const int& getId() const { return id;}
    const int& getLevel() const { return level;}
@@ -197,8 +192,6 @@ public:
    const std::vector<int>& getChildIds() const { return childIds;}
    const std::string& getWorkUnitLabel() const { return workUnitLabel;}
    const std::vector<std::string>& getGroups() const { return groups;}
-   
-   
    
 private:
    const int id; // unique id identifying this timer (index for timers)

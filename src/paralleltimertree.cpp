@@ -92,11 +92,14 @@ void ParallelTimerTree::collectGroupStats(){
 // reportRank is the rank to be used in the report, not the rank in the printComm communicator
 void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentIndex){
    //per process info. updated in collectStats
+   //TODO, why static?
    static std::vector<double> time;
    static std::vector<doubleRankPair> timeRank;
    static std::vector<double> workUnits;
    static std::vector<int64_t> count;
    static std::vector<int> threads;
+   static std::vector<double> threadImbalance;
+   static std::vector<doubleRankPair> threadImbalanceRank;
    static std::vector<int> parentIndices;
    int currentIndex;
    doubleRankPair in;
@@ -108,6 +111,8 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
       timeRank.clear();
       count.clear();
       threads.clear();
+      threadImbalance.clear();
+      threadImbalanceRank.clear();
       workUnits.clear();
       parentIndices.clear();
       stats.id.clear();
@@ -118,16 +123,18 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
 
    currentIndex=stats.id.size();         
    double currentTime=getTime(id);
-         
    stats.id.push_back(id);
-   stats.level.push_back((*this)[id].getLevel());
-   
+   stats.level.push_back((*this)[id].getLevel());   
    time.push_back(currentTime);
    in.val=currentTime;
    in.rank=reportRank;
    timeRank.push_back(in);
    count.push_back((*this)[id].getAverageCount());
    threads.push_back((*this)[id].getThreads());
+   in.val = (*this)[id].getTimeImbalance();
+   in.rank = reportRank;
+   threadImbalance.push_back(in.val);
+   threadImbalanceRank.push_back(in);
    workUnits.push_back((*this)[id].getAverageWorkUnits());
    parentIndices.push_back(parentIndex);
          
@@ -148,6 +155,12 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
       timeRank.push_back(in);
       count.push_back((*this)[id].getAverageCount());
       threads.push_back((*this)[id].getThreads());
+      //TODO - cannot yet compute thread imbalance for other timer 
+      in.val = 0.0;
+      in.rank = reportRank;
+      threadImbalance.push_back(in.val);
+      threadImbalanceRank.push_back(in);
+      
       workUnits.push_back(-1);
       parentIndices.push_back(currentIndex);
    }
@@ -156,7 +169,7 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
    //compute statistics now
    if(id==0){
       int nTimers=time.size();
-      if(rankInPrint==0){
+      if(rankInPrint == 0){
          stats.timeSum.resize(nTimers);
          stats.timeMax.resize(nTimers);
          stats.timeMin.resize(nTimers);
@@ -164,20 +177,28 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
          stats.hasWorkUnits.resize(nTimers);
          stats.countSum.resize(nTimers);
          stats.threadsSum.resize(nTimers);
+         stats.threadImbalanceSum.resize(nTimers);
+         stats.threadImbalanceMax.resize(nTimers);
+         stats.threadImbalanceMin.resize(nTimers);
+
 
          stats.timeTotalFraction.resize(nTimers);
          stats.timeParentFraction.resize(nTimers);
          std::vector<double> workUnitsMin;
          workUnitsMin.resize(nTimers);
-               
+
          MPI_Reduce(&(time[0]),&(stats.timeSum[0]),nTimers,MPI_DOUBLE,MPI_SUM,0,printComm);
          MPI_Reduce(&(timeRank[0]),&(stats.timeMax[0]),nTimers,MPI_DOUBLE_INT,MPI_MAXLOC,0,printComm);
          MPI_Reduce(&(timeRank[0]),&(stats.timeMin[0]),nTimers,MPI_DOUBLE_INT,MPI_MINLOC,0,printComm);
-               
+         
          MPI_Reduce(&(workUnits[0]),&(stats.workUnitsSum[0]),nTimers,MPI_DOUBLE,MPI_SUM,0,printComm);
          MPI_Reduce(&(workUnits[0]),&(workUnitsMin[0]),nTimers,MPI_DOUBLE,MPI_MIN,0,printComm);
          MPI_Reduce(&(count[0]),&(stats.countSum[0]),nTimers,MPI_INT64_T,MPI_SUM,0,printComm);
          MPI_Reduce(&(threads[0]),&(stats.threadsSum[0]),nTimers,MPI_INT,MPI_SUM,0,printComm);
+
+         MPI_Reduce(&(threadImbalance[0]),&(stats.threadImbalanceSum[0]), nTimers, MPI_DOUBLE, MPI_SUM, 0, printComm);
+         MPI_Reduce(&(threadImbalanceRank[0]),&(stats.threadImbalanceMax[0]), nTimers, MPI_DOUBLE_INT, MPI_MAXLOC, 0, printComm);
+         MPI_Reduce(&(threadImbalanceRank[0]),&(stats.threadImbalanceMin[0]), nTimers, MPI_DOUBLE_INT, MPI_MINLOC, 0, printComm);
                
          for(int i=0;i<nTimers;i++){
             if(stats.workUnitsSum[i] <= 0)
@@ -206,12 +227,18 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
          MPI_Reduce(&(workUnits[0]),NULL,nTimers,MPI_DOUBLE,MPI_MIN,0,printComm);
          MPI_Reduce(&(count[0]),NULL,nTimers,MPI_INT64_T,MPI_SUM,0,printComm);               
          MPI_Reduce(&(threads[0]),NULL,nTimers,MPI_INT,MPI_SUM,0,printComm);
+
+         MPI_Reduce(&(threadImbalance[0]), NULL, nTimers, MPI_DOUBLE, MPI_SUM, 0, printComm);
+         MPI_Reduce(&(threadImbalanceRank[0]), NULL, nTimers, MPI_DOUBLE_INT, MPI_MAXLOC, 0, printComm);
+         MPI_Reduce(&(threadImbalanceRank[0]), NULL, nTimers, MPI_DOUBLE_INT, MPI_MINLOC, 0, printComm);
       }
       //clear temporary data structures
       time.clear();
       timeRank.clear();
       count.clear();
       threads.clear();
+      threadImbalance.clear();
+      threadImbalanceRank.clear();
       workUnits.clear();
       parentIndices.clear();
    }
@@ -540,8 +567,7 @@ bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
    MPI_Comm_rank(printComm,&rankInPrint);
    MPI_Comm_size(printComm,&nProcessesInPrint);
    
-
-   //communicator with printComm masters(rank=0), this will be used to number the printComm's
+      //communicator with printComm masters(rank=0), this will be used to number the printComm's
    MPI_Comm printCommMasters;
    MPI_Comm_split(comm,rankInPrint==0,-nProcessesInPrint,&printCommMasters);
    MPI_Comm_rank(printCommMasters,&printIndex);
@@ -589,7 +615,7 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,
       fname << fileNamePrefix << "_" << printIndex << ".txt";
       collectTimerStats(rank);
       collectGroupStats();
-      if(rankInPrint==0){
+      if(rankInPrint == 0){
          std::ofstream output;
          std::map<std::string, std::string> groupIds;
          getGroupIds(groupIds);

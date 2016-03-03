@@ -45,6 +45,7 @@ public:
    bool print(MPI_Comm comm, std::string fileNamePrefix="profile", double minFraction=0.0);
    
 private:
+
    //used with MPI reduction operator
    struct doubleRankPair {
       double val;
@@ -62,7 +63,11 @@ private:
       std::vector<bool> hasWorkUnits;
       std::vector<double> workUnitsSum;
       std::vector<int64_t> countSum;
+      
       std::vector<int> threadsSum;
+      std::vector<double> threadImbalanceSum;
+      std::vector<doubleRankPair> threadImbalanceMax;
+      std::vector<doubleRankPair> threadImbalanceMin;
    };
    TimerStatistics stats;
    

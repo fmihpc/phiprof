@@ -91,24 +91,65 @@ public:
       active[thread]=false;
       return parentId;
    }
+
+
+   void getTimeStatistics(double &ave, double &max, double &min, int &nThreads) const {
+      max = 0;
+      min = std::numeric_limits<double>::max() ;
+      double sum = 0;
+      nThreads = 0;
+      
+      for(int i = 0; i < time.size(); i++){
+         if(count[i] > 0 || active[i]) {
+            nThreads++;
+            double timerTime = time[i] + (active[i] ? wTime()- startTime[i] : 0.0);
+            max = std::max(timerTime, max);
+            min = std::min(timerTime, min);
+            sum += timerTime;
+         }
+      }
+
+      if(nThreads == 0)
+         ave = 0.0;
+      else
+         ave =  sum / nThreads;
+   }
+   
+
+   double getTimeImbalance() const {
+      double max, min, ave;
+      int nThreads;
+      getTimeStatistics(ave, max, min, nThreads);
+      if ( nThreads > 1) {
+         return  (max- ave)/max * nThreads / (nThreads - 1) ;
+      }
+      else {
+         return 1.0;
+      }
+   }
    
    double getAverageTime() const {
-      double sumTime = 0.0;
+      double max, min, ave;
+      int nThreads;
+      getTimeStatistics(ave, max, min, nThreads);
+      return ave;
+   }
+      
+
+   int64_t getAverageCount() const {
+      int64_t sumCount = 0.0;
       int timedThreads = 0;
       for(int i = 0; i < time.size(); i++){
          if(count[i] > 0 || active[i]) {
             timedThreads++;
-            sumTime += time[i];
-            //add time uptill now for active timers
-            if(active[i]) {
-               sumTime += wTime()- startTime[i];
-            }
+            sumCount += count[i];
          }
       }
-      return sumTime / timedThreads;
+      //TODO, should return double
+      return sumCount / timedThreads;
    }
 
-   double getAverageWorkUnits() const {
+   double getAverageWorkUnits() const{
       double sumWorkUnits = 0.0;
       int timedThreads = 0;
       for(int i = 0; i < time.size(); i++){
@@ -120,18 +161,6 @@ public:
       return sumWorkUnits / timedThreads;
    }
 
-   int getAverageCount() const {
-      int sumCount = 0.0;
-      int timedThreads = 0;
-      for(int i = 0; i < time.size(); i++){
-         if(count[i] > 0 || active[i]) {
-            timedThreads++;
-            sumCount += count[i];
-         }
-      }
-      //TODO, should return double
-      return sumCount / timedThreads;
-   }
 
    double getThreads() const {
       int timedThreads = 0;

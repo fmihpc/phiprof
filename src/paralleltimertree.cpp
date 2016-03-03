@@ -294,7 +294,7 @@ bool ParallelTimerTree::printGroupStatistics(double minFraction,
       
 //print out global timers
 //If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
-bool ParallelTimerTree::printTree(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
+bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
    int rank,nProcesses;
 
 
@@ -316,13 +316,127 @@ bool ParallelTimerTree::printTree(double minFraction, const std::map<std::string
       //print heders
       table.addHorizontalLine();      
       //row1
-      table.addElement("",3);
+      table.addElement("",4);
+      table.addElement("Threads",1);
+      table.addElement("Time (s)",3);
+      table.addElement("Calls",1);
+      table.addElement("Workunit-rate",2);      
+      table.addHorizontalLine();
+      //row2
+      table.addElement("Id",1);
+      table.addElement("Lvl",1);
+      table.addElement("Grp",1);
+      table.addElement("Name",1);
+      table.addElement("Avg",1);
+      table.addElement("Avg",1);      
+      table.addElement("Parent %",1);      
+      table.addElement("Imbalance %",1);
+      table.addElement("Avg",1);            
+      table.addElement("Per proc",1);       
+      table.addElement("Unit",1);       
+      table.addHorizontalLine();
+
+      //print out all labels recursively
+      for(unsigned int i = 1; i < stats.id.size(); i++){
+         int id = stats.id[i];
+         if(stats.timeTotalFraction[i] >= minFraction){
+            //print timer if enough time is spent in it
+            if(id != -1) 
+               table.addElement(id);
+            else
+               table.addElement("");
+            
+            table.addElement(stats.level[i]);
+            if(id != -1) {
+               //normal timer, not "other" timer
+               //get and print group ids
+               buffer.str("");
+               for(auto &group : (*this)[id].getGroups()){
+                  std::string groupId=groupIds.count(group) ? groupIds.find(group)->second : std::string();
+                  buffer << groupId;
+               }
+               table.addElement(buffer.str());
+               table.addElement((*this)[id].getLabel(), 1, stats.level[i]-1);
+            }
+            else{
+               table.addElement(""); // no groups
+               table.addElement("Other", 1, stats.level[i]-1);
+            }
+            table.addElement(stats.threadsSum[i]/nProcessesInPrint);
+            table.addElement(stats.timeSum[i]/nProcessesInPrint);
+            table.addElement(100.0 * stats.timeParentFraction[i]);
+
+            double imbTime = stats.timeMax[i].val - stats.timeSum[i]/nProcessesInPrint;
+            
+            if(nProcessesInPrint>1)
+               table.addElement(100 * imbTime / stats.timeMax[i].val  * ( nProcessesInPrint /(nProcessesInPrint - 1 )));
+            else
+               table.addElement(0.0);
+
+            table.addElement(stats.countSum[i]/nProcessesInPrint);
+
+            if(stats.hasWorkUnits[i]){
+               //print if units defined for all processes
+               //note how the total rate is computed. This is to avoid one process with little data to     
+               //skew results one way or the other                        
+               if(stats.timeSum[i]>0){
+                  table.addElement(stats.workUnitsSum[i]/stats.timeSum[i]);
+               }
+               else if (stats.workUnitsSum[i]>0){
+                  //time is zero
+                  table.addElement("inf");
+               }
+               else {
+                  //zero time zero units
+                  table.addElement(0);
+               }
+               buffer.str("");
+               buffer << (*this)[id].getWorkUnitLabel()<<"/s";                     
+               table.addElement(buffer.str());
+            }
+            table.addRow();
+         }
+      }
+      
+      table.addHorizontalLine();
+      table.print(output);
+   }
+   return true;
+}
+
+
+//print out global timers
+//If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
+bool ParallelTimerTree::printTimersDetailed(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
+   int rank,nProcesses;
+
+
+   if(rankInPrint==0){
+      PrettyPrintTable table;
+
+      //print Title
+      std::stringstream buffer;
+      buffer << "Time fraction greater than " << minFraction;
+      buffer << " Processes in profile " << nProcessesInPrint;
+#ifdef _OPENMP
+      buffer << " with " << omp_get_max_threads() << " threads ";
+#endif
+      table.addTitle(buffer.str());
+      buffer.str("");
+
+
+      
+      //print heders
+      table.addHorizontalLine();      
+      //row1
+      table.addElement("",4);
       table.addElement("Threads",1);
       table.addElement("Time (s)",6);
       table.addElement("Calls",1);
       table.addElement("Workunit-rate",3);      
       table.addHorizontalLine();
       //row2
+      table.addElement("Id",1);
       table.addElement("Lvl",1);
       table.addElement("Grp",1);
       table.addElement("Label",1);
@@ -342,6 +456,11 @@ bool ParallelTimerTree::printTree(double minFraction, const std::map<std::string
          int id = stats.id[i];
          if(stats.timeTotalFraction[i] >= minFraction){
             //print timer if enough time is spent in it
+            if(id != -1) 
+               table.addElement(id);
+            else
+               table.addElement("");
+
             table.addElement(stats.level[i]);
             if(id != -1) {
                //normal timer, not "other" timer
@@ -398,7 +517,6 @@ bool ParallelTimerTree::printTree(double minFraction, const std::map<std::string
    }
    return true;
 }
-
       
 
 bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
@@ -479,8 +597,9 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,
          output.open(fname.str(), std::fstream::out);
          if (output.good() == false)
             return false;
-         printTree(minFraction, groupIds, output);
          printGroupStatistics(minFraction, groupIds, output);
+         printTimers(minFraction, groupIds, output);
+         printTimersDetailed(minFraction, groupIds, output);
          output.close();
       }
    } 

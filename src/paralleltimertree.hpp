@@ -81,9 +81,12 @@ private:
    void collectTimerStats(int reportRank,int id=0,int parentIndex=0);
 
    
-   bool printTree(double minFraction, 
-                  const std::map<std::string, std::string> &groupIds,                  
-                  std::ofstream &output);   
+   bool printTimers(double minFraction, 
+                    const std::map<std::string, std::string> &groupIds,                  
+                    std::ofstream &output);   
+   bool printTimersDetailed(double minFraction, 
+                    const std::map<std::string, std::string> &groupIds,                  
+                    std::ofstream &output);   
    
    bool printGroupStatistics(double minFraction,
                              const std::map<std::string, std::string> &groupIds,

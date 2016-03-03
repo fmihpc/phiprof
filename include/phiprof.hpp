@@ -103,50 +103,11 @@ namespace phiprof
    *   unique set of timers (label, hierarchy, workunits) will be
    *   assigned a unique hash number and the profile will be written
    *   out into a file called fileprefix_hash.txt
-   * @param minFraction
-   *   (optional) Default value is to print all timers
-   *   minFraction can be used to filter the timers being printed so
-   *   that only the ones with a meaningfull amount of time are
-   *   printed. Only timers with (timer time)/(total time)>=minFraction
-   *   are printed. If minfraction is <=0.0 then all timers are printed.
    * @return
    *   Returns true if pofile printed successfully.
    */
 
-   bool print(MPI_Comm comm, std::string fileNamePrefix="profile", double minFraction=0.0);
-   
-    /**
-   * Print the current timer state in a easily parsable format
-   *
-   * This function will print the timer statistics in a text based
-   * parsable format, each unique set of hierarchical profiles
-   * (labels, hierarchy, workunits) will be written out to a separate
-   * file. This function will print the times since the last call to
-   * printLogProfile, or since initialization for the first call to
-   * printLogProfile. It is meant to be called multiple times, to
-   * track the develpoment of performance metrics. 
-   *
-   *
-   * @param comm
-   *   Communicator for processes that print their profile.
-   * @param fileNamePrefix
-   *   (optional) Default value is "profile_log"
-   *   The first part of the filename where the profile is printed. Each
-   *   unique set of timers (label, hierarchy, workunits) will be
-   *   assigned a unique hash number and the profile will be written
-   *   out into a file called fileprefix_hash.txt
-   * @param separator
-   *   (optional) Default value is " "
-   *   The separator between fields in the file.
-   * @param maxLevel
-   *   (optional) Default value is to print all timers
-   *   Maxlevel can be used to limit the number of timers that are
-   *   printed out. Only timers with a level in the
-   *   hierarchy<=maxLevel are printed.
-   * @return
-   *   Returns true if pofile printed successfully.
-   */
-  bool printLogProfile(MPI_Comm comm,double simulationTime,std::string fileNamePrefix="profile_log",std::string separator=" ",int maxLevel=0);
+   bool print(MPI_Comm comm, std::string fileNamePrefix="profile");
 
   /**
    * Initialize a timer, with a particular label   

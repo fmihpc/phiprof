@@ -112,8 +112,8 @@ namespace phiprof
    bool stop (int id){
       return parallelTimerTree.stop(id);
    }
-   bool print(MPI_Comm comm, std::string fileNamePrefix, double minFraction){
-      return parallelTimerTree.print(comm, fileNamePrefix, minFraction);
+   bool print(MPI_Comm comm, std::string fileNamePrefix){
+      return parallelTimerTree.print(comm, fileNamePrefix);
    }
    
 

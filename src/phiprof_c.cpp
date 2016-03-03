@@ -77,12 +77,8 @@ extern "C" int phiprof_stopIdUnits(int id,double units,char *unitName){
 }
 
 
-extern "C" int phiprof_print(MPI_Comm comm, char *fileNamePrefix, double minFraction){
-  return (int)phiprof::print(comm,string(fileNamePrefix),minFraction);
-}
-
-extern "C"  int phiprof_printLogProfile(MPI_Comm comm, double simulationTime, char *fileNamePrefix, char *separator,int maxLevel){
-  return (int)phiprof::printLogProfile(comm,simulationTime,string(fileNamePrefix),string(separator),maxLevel);
+extern "C" int phiprof_print(MPI_Comm comm, char *fileNamePrefix){
+  return (int)phiprof::print(comm,string(fileNamePrefix));
 }
 
 extern "C"  void phiprof_phiprofAssert(int condition, char *errorMessage, char *fileName, int line ) {

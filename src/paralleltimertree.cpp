@@ -92,7 +92,6 @@ void ParallelTimerTree::collectGroupStats(){
 // reportRank is the rank to be used in the report, not the rank in the printComm communicator
 void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentIndex){
    //per process info. updated in collectStats
-   //TODO, why static?
    static std::vector<double> time;
    static std::vector<doubleRankPair> timeRank;
    static std::vector<double> workUnits;
@@ -156,7 +155,7 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
       count.push_back((*this)[id].getAverageCount());
       threads.push_back((*this)[id].getThreads());
       //TODO - cannot yet compute thread imbalance for other timer 
-      in.val = 0.0;
+      in.val = -1.0;
       in.rank = reportRank;
       threadImbalance.push_back(in.val);
       threadImbalanceRank.push_back(in);
@@ -330,17 +329,25 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
 
       //print Title
       std::stringstream buffer;
-      buffer << "Time fraction greater than " << minFraction <<". ";
-      buffer <<  nProcessesInPrint << " processes in profile";
+      if(minFraction > 0.0 ) {
+         
+         buffer << "Timers with more than " << minFraction * 100 <<"% of total time. ";
+         buffer <<  "Set of identical timers has "<< nProcessesInPrint << " processes";
+         
 #ifdef _OPENMP
-      buffer << " with " << omp_get_max_threads() << " threads";
+         buffer << " with up to " << omp_get_max_threads() << " threads each";
 #endif
-      buffer << ".";
+         buffer << ".";
+      }
+      else{
+         buffer << "All timers. Set of identical timers has "<< nProcessesInPrint <<" processes";
+#ifdef _OPENMP
+         buffer << " with up to " << omp_get_max_threads() << " threads each";
+#endif
+         buffer << ".";
+      }
+      table.addTitle(buffer.str());
       buffer.str("");
-
-      table.addTitle("Timer statistics");
-
-
 
       
       //print heders
@@ -405,11 +412,13 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
                table.addElement(0.0);
             
             table.addElement(stats.threadsSum[i]/nProcessesInPrint);
-            if(stats.threadsSum[i]/nProcessesInPrint > 1.0) {
+            if(stats.threadsSum[i]/nProcessesInPrint > 1.0 && stats.threadImbalanceMax[i].val >= 0.0) {
                table.addElement(100.0 * stats.threadImbalanceSum[i]/nProcessesInPrint);
                table.addElement(100.0 * stats.threadImbalanceMax[i].val);
             }
             else {
+               //not threaded or an "other" counter for which thread
+               //imbalance is not computed
                table.addElement("");
                table.addElement("");
             }
@@ -457,15 +466,26 @@ bool ParallelTimerTree::printTimersDetailed(double minFraction, const std::map<s
 
       //print Title
       std::stringstream buffer;
-      buffer << "Time fraction greater than " << minFraction <<". ";
-      buffer <<  nProcessesInPrint << " processes in profile";
+      if(minFraction > 0.0 ) {
+         
+         buffer << "Timers with more than " << minFraction * 100 <<"% of total time. ";
+         buffer <<  "Set of identical timers has "<< nProcessesInPrint << " processes";
+         
 #ifdef _OPENMP
-      buffer << " with " << omp_get_max_threads() << " threads";
+         buffer << " with up to " << omp_get_max_threads() << " threads each";
 #endif
-      buffer << ".";
+         buffer << ".";
+      }
+      else{
+         buffer << "All timers. Set of identical timers has "<< nProcessesInPrint <<" processes";
+#ifdef _OPENMP
+         buffer << " with up to " << omp_get_max_threads() << " threads each";
+#endif
+         buffer << ".";
+      }
       table.addTitle(buffer.str());
       buffer.str("");
-
+         
 
       
       //print heders
@@ -613,7 +633,7 @@ bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
 
 
 
-bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,double minFraction){
+bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix){
    int timersHash,printIndex;
          
    //printStartTime defined in namespace, used to correct timings for open timers
@@ -638,9 +658,10 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,
          if (output.good() == false)
             return false;
 
-         printGroupStatistics(minFraction, groupIds, output);
-         printTimers(minFraction, groupIds, output);
-         printTimersDetailed(minFraction, groupIds, output);
+         printGroupStatistics(0.0, groupIds, output);
+         printTimers(0.01, groupIds, output);
+         printTimers(0.0, groupIds, output);
+         printTimersDetailed(0.0, groupIds, output);
          output.close();
       }
    } 

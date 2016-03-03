@@ -16,7 +16,7 @@ INCLUDES = -I../include
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -O3 -g -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) # -DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
+CCFLAGS = -O3 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) # -DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
 
 # compiler
 CCC = mpiCC

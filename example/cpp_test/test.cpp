@@ -131,7 +131,6 @@ int main(int argc,char **argv){
    MPI_Barrier(MPI_COMM_WORLD);
    double t1=MPI_Wtime();
    phiprof::print(MPI_COMM_WORLD);
-   phiprof::print(MPI_COMM_WORLD,"profile_minfrac0.01",0.01);
    if(rank==0)   
       cout<< "Print time is "<<MPI_Wtime()-t1<<endl;
 //   phiprof::print(MPI_COMM_WORLD,0.1);

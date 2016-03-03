@@ -46,7 +46,6 @@ int phiprof_stopId(int id);
 int phiprof_stopIdUnits(int id,double units,char *unitName);
 
 int phiprof_print(MPI_Comm comm, char *fileNamePrefix, double minFraction);
-int phiprof_printLogProfile(MPI_Comm comm, double simulationTime, char *fileNamePrefix, char *separator, int maxLevel);
 
 void phiprof_phiprofAssert(int condition, char* errorMessage, char* fileName, int line);
 

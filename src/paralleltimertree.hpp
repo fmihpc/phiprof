@@ -42,7 +42,7 @@ public:
     * @return
     *   Returns true if pofile printed successfully.
     */
-   bool print(MPI_Comm comm, std::string fileNamePrefix="profile", double minFraction=0.0);
+   bool print(MPI_Comm comm, std::string fileNamePrefix="profile");
    
 private:
 

@@ -1,0 +1,11 @@
+*.dat
+*.vlsv
+*.silo
+*.o
+version.cpp
+\#*\#
+*~
+nbproject
+vlasiator
+vlasiator+pat
+nbproject

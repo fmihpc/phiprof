@@ -330,13 +330,16 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
 
       //print Title
       std::stringstream buffer;
-      buffer << "Time fraction greater than " << minFraction;
-      buffer << " Processes in profile " << nProcessesInPrint;
+      buffer << "Time fraction greater than " << minFraction <<". ";
+      buffer <<  nProcessesInPrint << " processes in profile";
 #ifdef _OPENMP
-      buffer << " with " << omp_get_max_threads() << " threads ";
+      buffer << " with " << omp_get_max_threads() << " threads";
 #endif
-      table.addTitle(buffer.str());
+      buffer << ".";
       buffer.str("");
+
+      table.addTitle("Timer statistics");
+
 
 
       
@@ -344,10 +347,10 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
       table.addHorizontalLine();      
       //row1
       table.addElement("",4);
-      table.addElement("Threads",1);
-      table.addElement("Time (s)",3);
-      table.addElement("Calls",1);
-      table.addElement("Workunit-rate",2);      
+      table.addElement("Count",1);
+      table.addElement("Process time",3);
+      table.addElement("Thread imbalances",3);
+      table.addElement("Workunits",1);      
       table.addHorizontalLine();
       //row2
       table.addElement("Id",1);
@@ -355,12 +358,14 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
       table.addElement("Grp",1);
       table.addElement("Name",1);
       table.addElement("Avg",1);
-      table.addElement("Avg",1);      
-      table.addElement("Parent %",1);      
-      table.addElement("Imbalance %",1);
-      table.addElement("Avg",1);            
-      table.addElement("Per proc",1);       
-      table.addElement("Unit",1);       
+      table.addElement("Avg (s)",1);      
+      table.addElement("Time %",1);      
+      table.addElement("Imb %",1);
+      table.addElement("No",1);            
+      table.addElement("Avg %",1);
+      table.addElement("Max %",1);
+
+      table.addElement("Avg",1);       
       table.addHorizontalLine();
 
       //print out all labels recursively
@@ -389,37 +394,46 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
                table.addElement(""); // no groups
                table.addElement("Other", 1, stats.level[i]-1);
             }
-            table.addElement(stats.threadsSum[i]/nProcessesInPrint);
+
+            table.addElement(stats.countSum[i]/nProcessesInPrint);
             table.addElement(stats.timeSum[i]/nProcessesInPrint);
             table.addElement(100.0 * stats.timeParentFraction[i]);
-
-            double imbTime = stats.timeMax[i].val - stats.timeSum[i]/nProcessesInPrint;
-            
+            double imbTime = stats.timeMax[i].val - stats.timeSum[i]/nProcessesInPrint;            
             if(nProcessesInPrint>1)
                table.addElement(100 * imbTime / stats.timeMax[i].val  * ( nProcessesInPrint /(nProcessesInPrint - 1 )));
             else
                table.addElement(0.0);
-
-            table.addElement(stats.countSum[i]/nProcessesInPrint);
+            
+            table.addElement(stats.threadsSum[i]/nProcessesInPrint);
+            if(stats.threadsSum[i]/nProcessesInPrint > 1.0) {
+               table.addElement(100.0 * stats.threadImbalanceSum[i]/nProcessesInPrint);
+               table.addElement(100.0 * stats.threadImbalanceMax[i].val);
+            }
+            else {
+               table.addElement("");
+               table.addElement("");
+            }
 
             if(stats.hasWorkUnits[i]){
+               buffer.str("");
+
                //print if units defined for all processes
                //note how the total rate is computed. This is to avoid one process with little data to     
                //skew results one way or the other                        
                if(stats.timeSum[i]>0){
-                  table.addElement(stats.workUnitsSum[i]/stats.timeSum[i]);
+                  buffer << stats.workUnitsSum[i]/stats.timeSum[i];
                }
                else if (stats.workUnitsSum[i]>0){
                   //time is zero
-                  table.addElement("inf");
+                  buffer << "inf";
                }
                else {
                   //zero time zero units
-                  table.addElement(0);
+                  buffer << 0;
                }
-               buffer.str("");
-               buffer << (*this)[id].getWorkUnitLabel()<<"/s";                     
+               buffer << " "<< (*this)[id].getWorkUnitLabel()<<"/s";                     
                table.addElement(buffer.str());
+
             }
             table.addRow();
          }
@@ -443,11 +457,12 @@ bool ParallelTimerTree::printTimersDetailed(double minFraction, const std::map<s
 
       //print Title
       std::stringstream buffer;
-      buffer << "Time fraction greater than " << minFraction;
-      buffer << " Processes in profile " << nProcessesInPrint;
+      buffer << "Time fraction greater than " << minFraction <<". ";
+      buffer <<  nProcessesInPrint << " processes in profile";
 #ifdef _OPENMP
-      buffer << " with " << omp_get_max_threads() << " threads ";
+      buffer << " with " << omp_get_max_threads() << " threads";
 #endif
+      buffer << ".";
       table.addTitle(buffer.str());
       buffer.str("");
 
@@ -619,10 +634,10 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix,
          std::ofstream output;
          std::map<std::string, std::string> groupIds;
          getGroupIds(groupIds);
-
          output.open(fname.str(), std::fstream::out);
          if (output.good() == false)
             return false;
+
          printGroupStatistics(minFraction, groupIds, output);
          printTimers(minFraction, groupIds, output);
          printTimersDetailed(minFraction, groupIds, output);

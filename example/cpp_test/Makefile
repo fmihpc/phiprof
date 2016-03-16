@@ -7,15 +7,15 @@ INCLUDES =
 
 # C++ compiler flags (-g -O2 -Wall)
 CCFLAGS = -O3 -I../../include  -fopenmp
-LDFLAGS = -L../../lib -lphiprof -lgomp
+LDFLAGS = -L../../lib -lphiprof  -lgomp -ldl
 # compiler
-CCC = mpiCC
+CCC = CC
 
 
 .SUFFIXES: .cpp
 
 default: $(OBJ) 
-	$(CCC) -o test  $(OBJ) $(LDFLAGS) 
+	$(CCC) -o test  $(OBJ) $(LDFLAGS)   
 
 .cpp.o:
 	$(CCC) $(INCLUDES) $(CCFLAGS) -c $< -o $@

@@ -102,7 +102,7 @@ int main(int argc,char **argv){
    phiprof::start("Test accuracy");
 
    if(rank==0)
-      cout << "  1/2" <<endl;
+      cout << "  1/3" <<endl;
    phiprof::start("100x0.01s computations"); 
    for(int i=0;i<100;i++){
       phiprof::start("compute");
@@ -112,7 +112,7 @@ int main(int argc,char **argv){
    phiprof::stop("100x0.1s computations");
 
    if(rank==0)
-      cout << "  2/2" <<endl;
+      cout << "  2/3" <<endl;
    MPI_Barrier(MPI_COMM_WORLD);
    phiprof::start("100 x  0.01 (threadId + 1)s computations with threads id labels"); 
    int id = phiprof::initializeTimer("compute");
@@ -124,9 +124,29 @@ int main(int argc,char **argv){
    }
    phiprof::stop("100 x  0.1 (threadId + 1)s computations with threads id labels"); 
 
+   if(rank==0)
+      cout << "  3/3" <<endl;
+   MPI_Barrier(MPI_COMM_WORLD);
+   phiprof::start("100 x  0.01 (threadId + 1)s computations with threads string labels"); 
+
+#pragma omp parallel
+   for(int i=0;i<100;i++){
+      phiprof::start("compute");
+      compute(0.01 * (omp_get_thread_num() + 1));
+      phiprof::stop("compute");
+   }
+   phiprof::stop("100 x  0.1 (threadId + 1)s computations with threads string labels"); 
+
 
 
    phiprof::stop("Test accuracy");
+
+   if(rank%2 == 1) {
+      
+      phiprof::start("Test-profile-groups");
+      phiprof::stop("Test-profile-groups");
+   }
+   
 
    MPI_Barrier(MPI_COMM_WORLD);
    double t1=MPI_Wtime();

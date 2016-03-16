@@ -34,17 +34,18 @@ public:
          std::cerr << "PHIPROF-ERROR: id is invalid, timer does not exist "<< std::endl;
          return false;
       }
-      std::vector<int> childIds = timers[currentId].getChildIds(); 
+      std::vector<int> childIds = timers[currentId[thread]].getChildIds(); 
       if ( std::find(childIds.begin(), childIds.end(), id) == childIds.end() ) {
-         std::cerr << "PHIPROF-ERROR: id "<< id << " is invalid, timer is not child of current timer "<< currentId << ":" <<timers[currentId].getLabel() << std::endl;
+         std::cerr << "PHIPROF-ERROR: id "<< id << " is invalid, timer is not child of current timer "<< currentId[thread] << ":" <<timers[currentId].getLabel() << std::endl;
          return false;
       }
 #endif
       //start timer (currentId = id)
       
       int newId = timers[id].start();
-#pragma omp master
-      currentId = newId;
+
+      setCurrentId(newId);
+      
       
       return true;
       
@@ -97,8 +98,8 @@ public:
 
    bool stop (const int id){
 #ifdef DEBUG_PHIPROF_TIMERS         
-      if(id != currentId ){
-         std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].getLevel() << std::endl;
+      if(id != currentId[thread] ){
+         std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;
          return false;
       }
 #endif            
@@ -106,7 +107,8 @@ public:
       int newId = timers[id].stop();
       //currentid only updated on master
 #pragma omp master
-      currentId = newId;
+      setCurrentId(newId);
+      
       
       return true;
    }
@@ -150,8 +152,35 @@ public:
    int getHash(int id=0) const;
    std::string getFullLabel(int id,bool reverse=false) const;  
 
+
+
 protected:
-   int currentId;
+
+
+   static int setThreadCounts(){
+#ifdef _OPENMP
+#pragma omp single
+      numThreads = omp_get_max_threads();
+      if(omp_in_parallel()) {
+         thread = omp_get_thread_num();
+      }
+      else{
+#pragma omp parallel
+         thread = omp_get_thread_num();
+      }
+#else
+      numThreads = 1;
+      thread = 0;
+#endif
+}
+
+   void setCurrentId(int newId);
+   
+   static int numThreads;
+   static int thread;
+#pragma omp threadprivate(thread)
+
+   std::vector<int> currentId;
    std::vector<TimerData> timers;
 
 

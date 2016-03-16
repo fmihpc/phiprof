@@ -9,19 +9,40 @@
 #include "timertree.hpp"
 #include "common.hpp"
 
+int TimerTree::numThreads = 1;
+int TimerTree::thread = 0;
+
+
 //initialize profiler, called by first start/initializeTimer. This adds the root timer
 TimerTree::TimerTree(){
    std::vector<std::string> group;
    group.push_back("Total");
-   currentId = -1;
    //set static variables with threadcounts
    TimerData::setThreadCounts();
+   TimerTree::setThreadCounts();
+   currentId.resize(numThreads);
+   setCurrentId(-1);
    timers.clear();
+   
    //mainId will be 0, parent is -1 (does not exist)
    timers.push_back(TimerData(NULL, 0, "total", group,""));
    timers[0].start();
-   currentId = 0;
+   setCurrentId(0);
    
+}
+
+
+void TimerTree::setCurrentId(int id){
+#ifdef _OPENMP
+   if(omp_in_parallel())
+      currentId[thread] = id;
+   else
+      for(int i=0; i< numThreads;i++)
+         currentId[i] = id;
+#else
+   currentId[thread] = id;
+#endif
+
 }
 
 //initialize a timer, with a particular label belonging to some groups
@@ -31,27 +52,25 @@ int TimerTree::initializeTimer(const std::string &label, const std::vector<std::
    //check if the global profiler is initialized
    //master + barrier and not single to make sure one at a time is created
    int id;
-#pragma omp master
+#pragma omp critical(phiprof)
    {
       id = getChildId(label); //check if label exists as childtimer
       if(id < 0) {
          //does not exist, let's create it
          id = timers.size(); //id for new timer
-         timers.push_back(TimerData(&(timers[currentId]), id, label, groups, workUnit));
+         timers.push_back(TimerData(&(timers[currentId[thread]]), id, label, groups, workUnit));
       }
    }
    return id;
 }
    
 
-//start timer, with label. This function syncronizes OpenMP.
+//start timer, with label.
 bool TimerTree::start(const std::string &label){
    //If the timer exists, then initializeTimer just returns its id, otherwise it is constructed.
-   #pragma omp master
-   {
-      int newId = initializeTimer(label, std::vector<std::string>(), "");
-      start(newId);
-   }
+   int newId = initializeTimer(label, std::vector<std::string>(), "");
+   start(newId);
+
    return true;
    
 }
@@ -64,17 +83,14 @@ bool TimerTree::stop (int id,
                       double workUnits){
    bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
-   if(id != currentId ){
-      std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].getLevel() << std::endl;
+   if(id != currentId[thread] ){
+      std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;
       return false;
       
    }
 #endif
-      int newId = timers[id].stop(workUnits);
-      //currentid only updated on master
-#pragma omp master
-      currentId = newId;
-
+   int newId = timers[id].stop(workUnits);
+   setCurrentId(newId);
    return true;
 }
 //stop a timer defined by id
@@ -84,31 +100,19 @@ bool TimerTree::stop (int id,
    bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId ){
-      std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId].getLevel() << std::endl;
+      std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;
       return false;
    }
 #endif
    int newId = timers[id].stop(workUnits, workUnitLabel);
-   //currentid only updated on master
-#pragma omp master
-   currentId = newId;
+   setCurrentId(newId);
    return true;
 }
 
 
 bool TimerTree::stop (const std::string &label)
 {
-#pragma omp master
-   {
-#ifdef DEBUG_PHIPROF_TIMERS         
-      if(label != timers[currentId].getLabel() ){
-         std::cerr << "PHIPROF-ERROR: label missmatch in profile::stop Stopping \""<< label <<"\" but current is " << currentId <<":\"" << timers[currentId].getLabel()<<"\"" << std::endl;
-         return false;
-      }
-#endif
-      currentId = timers[currentId].stop();
-   }
-   
+   setCurrentId(timers[currentId[thread]].stop());
    return true;
 }
 
@@ -117,16 +121,8 @@ bool TimerTree::stop (const std::string &label)
 bool TimerTree::stop (const std::string &label,
                       const double workUnits,
                       const std::string &workUnitLabel){
-#pragma omp master
-   {
-#ifdef DEBUG_PHIPROF_TIMERS         
-      if(label != timers[currentId].getLabel() ){
-         std::cerr << "PHIPROF-ERROR: label missmatch in profile::stop Stopping \""<< label <<"\" but current is " << currentId <<":\"" << timers[currentId].getLabel()<<"\"" << std::endl;
-         return false;      
-      }
-#endif
-      currentId = timers[currentId].stop(workUnits, workUnitLabel);
-   }
+   setCurrentId(timers[currentId[thread]].stop(workUnits, workUnitLabel));
+
    return true;
 }
 
@@ -135,7 +131,7 @@ bool TimerTree::stop (const std::string &label,
 //get id number of a timer, return -1 if it does not exist
 int TimerTree::getChildId(const std::string &label) const{
    //find child with this id
-   for(auto &childId : timers[currentId].getChildIds() ){  
+   for(auto &childId : timers[currentId[thread]].getChildIds() ){  
       if (timers[childId].getLabel() == label){
          return childId;
       } 

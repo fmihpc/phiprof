@@ -30,15 +30,15 @@ void PrettyPrintTable::addElement(float element, uint span){
 }
 
 void PrettyPrintTable::addElement(double element, uint span){
-   std::stringstream buffer;
-   //make sure we use default floats, and not fixed or other format
-   buffer << std::setiosflags( std::ios::floatfield );
-   buffer << std::setprecision(_floatPrecision); 
-   buffer << element;
+   char formatValue[24];
+   char strValue[80];   
+   sprintf(formatValue, "%%.%dg", _floatPrecision);
+   sprintf(strValue, formatValue, element);
    if(table.size() == 0) {
       addRow();
    }
-   table.back().push_back(std::make_pair(buffer.str(), span));
+   //table.back().push_back(std::make_pair(buffer.str(), span));
+   table.back().push_back(std::make_pair(std::string(strValue), span));
 }
 
 

@@ -31,8 +31,6 @@ int TimerTree::initializeTimer(const std::string &label, const std::vector<std::
    //check if the global profiler is initialized
    //master + barrier and not single to make sure one at a time is created
    int id;
-
-#pragma omp barrier
 #pragma omp master
    {
       id = getChildId(label); //check if label exists as childtimer
@@ -42,7 +40,6 @@ int TimerTree::initializeTimer(const std::string &label, const std::vector<std::
          timers.push_back(TimerData(&(timers[currentId]), id, label, groups, workUnit));
       }
    }
-#pragma omp barrier
    return id;
 }
    
@@ -50,9 +47,9 @@ int TimerTree::initializeTimer(const std::string &label, const std::vector<std::
 //start timer, with label. This function syncronizes OpenMP.
 bool TimerTree::start(const std::string &label){
    //If the timer exists, then initializeTimer just returns its id, otherwise it is constructed.
-   int newId = initializeTimer(label, std::vector<std::string>(), "");
-#pragma omp master
+   #pragma omp master
    {
+      int newId = initializeTimer(label, std::vector<std::string>(), "");
       start(newId);
    }
    return true;
@@ -91,14 +88,13 @@ bool TimerTree::stop (int id,
       return false;
    }
 #endif
-      int newId = timers[id].stop(workUnits, workUnitLabel);
-      //currentid only updated on master
+   int newId = timers[id].stop(workUnits, workUnitLabel);
+   //currentid only updated on master
 #pragma omp master
-      currentId = newId;
-
+   currentId = newId;
    return true;
 }
-   
+
 
 bool TimerTree::stop (const std::string &label)
 {

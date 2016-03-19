@@ -36,19 +36,14 @@ public:
       }
       std::vector<int> childIds = timers[currentId[thread]].getChildIds(); 
       if ( std::find(childIds.begin(), childIds.end(), id) == childIds.end() ) {
-         std::cerr << "PHIPROF-ERROR: id "<< id << " is invalid, timer is not child of current timer "<< currentId[thread] << ":" <<timers[currentId].getLabel() << std::endl;
+         std::cerr << "PHIPROF-ERROR for thread "<< thread<<": id "<< id << " is invalid, timer is not child of current timer "<< currentId[thread] << ":" <<timers[currentId[thread]].getLabel() << std::endl;
          return false;
       }
 #endif
       //start timer (currentId = id)
-      
       int newId = timers[id].start();
-
       setCurrentId(newId);
-      
-      
       return true;
-      
    }
 
 
@@ -103,13 +98,8 @@ public:
          return false;
       }
 #endif            
-      
       int newId = timers[id].stop();
-      //currentid only updated on master
-#pragma omp master
       setCurrentId(newId);
-      
-      
       return true;
    }
    

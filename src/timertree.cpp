@@ -34,11 +34,16 @@ TimerTree::TimerTree(){
 
 void TimerTree::setCurrentId(int id){
 #ifdef _OPENMP
-   if(omp_in_parallel())
+   if(omp_in_parallel()) {
       currentId[thread] = id;
-   else
-      for(int i=0; i< numThreads;i++)
+   }
+   
+   else {
+      for(int i=0; i< numThreads;i++) {
          currentId[i] = id;
+      }
+   }
+   
 #else
    currentId[thread] = id;
 #endif
@@ -59,6 +64,13 @@ int TimerTree::initializeTimer(const std::string &label, const std::vector<std::
          //does not exist, let's create it
          id = timers.size(); //id for new timer
          timers.push_back(TimerData(&(timers[currentId[thread]]), id, label, groups, workUnit));
+         
+#ifdef DEBUG_PHIPROF_TIMERS         
+         if(timers[id].getLevel() > 10) {
+            std::string label = getFullLabel(id, false);
+            std::cerr << "Warning creating deep timer level " << timers[id].getLevel() << " with full label " << label<<std::endl;
+         }
+#endif
       }
    }
    return id;
@@ -70,7 +82,6 @@ bool TimerTree::start(const std::string &label){
    //If the timer exists, then initializeTimer just returns its id, otherwise it is constructed.
    int newId = initializeTimer(label, std::vector<std::string>(), "");
    start(newId);
-
    return true;
    
 }
@@ -85,8 +96,7 @@ bool TimerTree::stop (int id,
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId[thread] ){
       std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;
-      return false;
-      
+      return false;      
    }
 #endif
    int newId = timers[id].stop(workUnits);
@@ -99,7 +109,7 @@ bool TimerTree::stop (int id,
                       const std::string &workUnitLabel){
    bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
-   if(id != currentId ){
+   if(id != currentId[thread] ){
       std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;
       return false;
    }
@@ -112,6 +122,13 @@ bool TimerTree::stop (int id,
 
 bool TimerTree::stop (const std::string &label)
 {
+#ifdef DEBUG_PHIPROF_TIMERS         
+   if(label != timers[currentId[thread]].getLabel()){
+      std::cerr << "PHIPROF-ERROR: label missmatch in profile::stop Stopping "<< label << " but " << timers[currentId[thread]].getLabel()<<" or full" <<  getFullLabel(currentId[thread], true) << " is active. thread:" << thread << "currentid" << currentId[thread] <<std::endl;
+//      std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< label << " but " << getFullLabel(currentId[thread], true) << " is active. thread:" << thread << "currentid" << currentId[thread] <<std::endl;
+      return false;
+   }
+#endif
    setCurrentId(timers[currentId[thread]].stop());
    return true;
 }
@@ -121,8 +138,14 @@ bool TimerTree::stop (const std::string &label)
 bool TimerTree::stop (const std::string &label,
                       const double workUnits,
                       const std::string &workUnitLabel){
-   setCurrentId(timers[currentId[thread]].stop(workUnits, workUnitLabel));
+#ifdef DEBUG_PHIPROF_TIMERS         
+   if(label != timers[currentId[thread]].getLabel()){
+      std::cerr << "PHIPROF-ERROR: label missmatch in profile::stop Stopping "<< label << " but " << timers[currentId[thread]].getLabel()<<"/" <<  getFullLabel(currentId[thread], true) << " is active. thread:" << thread << "currentid" << currentId[thread] <<std::endl;
 
+      return false;
+   }
+#endif
+   setCurrentId(timers[currentId[thread]].stop(workUnits, workUnitLabel));
    return true;
 }
 

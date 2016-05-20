@@ -194,8 +194,9 @@ int TimerTree::getHash(int id) const{
    unsigned long hashValue;
    //add hash values from label, workunitlabel and groups. Everything has to match.
    hashValue = timers[id].getHash();
+   //add hash values from descendants 
    for(auto &childId : timers[id].getChildIds() ){
-      hashValue += timers[childId].getHash();
+      hashValue += getHash(childId);
    }
    
    // MPI_Comm_split needs a non-zero value

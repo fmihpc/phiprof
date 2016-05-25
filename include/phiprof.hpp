@@ -41,6 +41,8 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 namespace phiprof
 {
 
+   //initialize phiprof
+   int initialize();
   /**
    * Start a profiling timer.
    *

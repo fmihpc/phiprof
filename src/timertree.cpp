@@ -11,25 +11,43 @@
 
 int TimerTree::numThreads = 1;
 int TimerTree::thread = 0;
+bool TimerTree::initialized = false;
 
+
+
+
+
+
+
+const int maxTimers = 10000;
 
 //initialize profiler, called by first start/initializeTimer. This adds the root timer
-TimerTree::TimerTree(){
-   std::vector<std::string> group;
-   group.push_back("Total");
-   //set static variables with threadcounts
-   TimerData::setThreadCounts();
-   TimerTree::setThreadCounts();
-   currentId.resize(numThreads);
-   setCurrentId(-1);
-   timers.clear();
-   
-   //mainId will be 0, parent is -1 (does not exist)
-   timers.push_back(TimerData(NULL, 0, "total", group,""));
-   timers[0].start();
-   setCurrentId(0);
-   
+TimerTree::TimerTree(){}
+
+int TimerTree::initialize(){
+      std::vector<std::string> group;
+      group.push_back("Total");
+      //set static variables with threadcounts
+      TimerData::setThreadCounts();
+      TimerTree::setThreadCounts();
+      currentId.resize(numThreads);
+      setCurrentId(-1);
+
+#pragma omp master
+      {
+         timers.clear();
+         //mainId will be 0, parent is -1 (does not exist)
+         timers.push_back(TimerData(NULL, 0, "total", group,""));
+         timers[0].start();
+         timers.reserve(maxTimers); //up to maxtimers we are guaranteed not to
+      }
+      
+      //re-allocate (thread safety)
+      setCurrentId(0);
+      initialized=true;
+
 }
+
 
 
 void TimerTree::setCurrentId(int id){
@@ -100,7 +118,7 @@ bool TimerTree::stop (int id,
    }
 #endif
    int newId = timers[id].stop(workUnits);
-   setCurrentId(newId);
+   setCurrentId(newId);   
    return true;
 }
 //stop a timer defined by id

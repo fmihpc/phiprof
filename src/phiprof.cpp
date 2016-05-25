@@ -42,8 +42,13 @@ namespace phiprof
 {
    namespace 
    {
-      ParallelTimerTree parallelTimerTree; //TODO make threadprivate / one per thread or something
+      ParallelTimerTree parallelTimerTree; 
    }
+
+   int initialize(){
+      parallelTimerTree.initialize();
+   }
+   
 
    int initializeTimer(const string &label,const vector<string> &groups){
       return parallelTimerTree.initializeTimer(label, groups);

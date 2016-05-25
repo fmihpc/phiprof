@@ -7,7 +7,8 @@
 class TimerTree {
 public:
    TimerTree(); //constructor   
-
+   int initialize();
+   
   /**
    * Start a profiling timer.
    *
@@ -31,14 +32,21 @@ public:
       bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
       if(id > timers.size() ) {
+#pragma omp critical
          std::cerr << "PHIPROF-ERROR: id is invalid, timer does not exist "<< std::endl;
+         
          return false;
       }
       std::vector<int> childIds = timers[currentId[thread]].getChildIds(); 
       if ( std::find(childIds.begin(), childIds.end(), id) == childIds.end() ) {
-         std::cerr << "PHIPROF-ERROR for thread "<< thread<<": id "<< id << " is invalid, timer is not child of current timer "<< currentId[thread] << ":" <<timers[currentId[thread]].getLabel() << std::endl;
+#pragma omp critical 
+         std::cerr << "PHIPROF-ERROR for thread "<< thread<< " omp_get_thread_num "<< 
+            omp_get_thread_num() << ": id "<< id << 
+            " is invalid, timer is not child of current timer "<< currentId[thread] << 
+            ":" << timers[currentId[thread]].getLabel() << std::endl;
          return false;
       }
+      
 #endif
       //start timer (currentId = id)
       int newId = timers[id].start();
@@ -145,12 +153,13 @@ public:
 
 
 protected:
-
+   
 
    static int setThreadCounts(){
 #ifdef _OPENMP
 #pragma omp single
       numThreads = omp_get_max_threads();
+      
       if(omp_in_parallel()) {
          thread = omp_get_thread_num();
       }
@@ -165,7 +174,7 @@ protected:
 }
 
    void setCurrentId(int newId);
-   
+   static bool initialized;
    static int numThreads;
    static int thread;
 #pragma omp threadprivate(thread)

@@ -57,8 +57,9 @@ int main(int argc,char **argv){
    const int nIterations=1000000;
    if(rank==0)
       cout << "Measuring performance of start-stop calls" <<endl;
-
-
+   
+   phiprof::initialize();
+   
    phiprof::start("Benchmarking phiprof"); 
 
    phiprof::start("Initalized timers using ID");
@@ -109,12 +110,13 @@ int main(int argc,char **argv){
       compute(0.01);
       phiprof::stop("compute");
    }
-   phiprof::stop("100x0.1s computations");
+   phiprof::stop("100x0.01s computations");
 
    if(rank==0)
       cout << "  2/3" <<endl;
    MPI_Barrier(MPI_COMM_WORLD);
    phiprof::start("100 x  0.01 (threadId + 1)s computations with threads id labels"); 
+
    int id = phiprof::initializeTimer("compute");
 #pragma omp parallel
    for(int i=0;i<100;i++){
@@ -122,7 +124,7 @@ int main(int argc,char **argv){
       compute(0.01 * (omp_get_thread_num() + 1));
       phiprof::stop(id);
    }
-   phiprof::stop("100 x  0.1 (threadId + 1)s computations with threads id labels"); 
+   phiprof::stop("100 x  0.01 (threadId + 1)s computations with threads id labels"); 
 
    if(rank==0)
       cout << "  3/3" <<endl;
@@ -135,7 +137,7 @@ int main(int argc,char **argv){
       compute(0.01 * (omp_get_thread_num() + 1));
       phiprof::stop("compute");
    }
-   phiprof::stop("100 x  0.1 (threadId + 1)s computations with threads string labels"); 
+   phiprof::stop("100 x  0.01 (threadId + 1)s computations with threads string labels"); 
 
 
 

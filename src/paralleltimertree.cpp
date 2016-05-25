@@ -425,12 +425,12 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
 
             if(stats.hasWorkUnits[i]){
                buffer.str("");
-
+               
                //print if units defined for all processes
                //note how the total rate is computed. This is to avoid one process with little data to     
                //skew results one way or the other                        
                if(stats.timeSum[i]>0){
-                  buffer << stats.workUnitsSum[i]/stats.timeSum[i];
+                  buffer << std::setprecision(4) << stats.workUnitsSum[i]/stats.timeSum[i];
                }
                else if (stats.workUnitsSum[i]>0){
                   //time is zero

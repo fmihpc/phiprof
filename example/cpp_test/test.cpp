@@ -115,8 +115,8 @@ int main(int argc,char **argv){
    if(rank==0)
       cout << "  2/3" <<endl;
    MPI_Barrier(MPI_COMM_WORLD);
-   phiprof::start("100 x  0.01 (threadId + 1)s computations with threads id labels"); 
 
+   phiprof::start("100 x 0.01 (threadId + 1)s, ID");
    int id = phiprof::initializeTimer("compute");
 #pragma omp parallel
    for(int i=0;i<100;i++){
@@ -124,20 +124,20 @@ int main(int argc,char **argv){
       compute(0.01 * (omp_get_thread_num() + 1));
       phiprof::stop(id);
    }
-   phiprof::stop("100 x  0.01 (threadId + 1)s computations with threads id labels"); 
+   phiprof::stop("100 x 0.01 (threadId + 1)s, ID"); 
 
    if(rank==0)
       cout << "  3/3" <<endl;
    MPI_Barrier(MPI_COMM_WORLD);
-   phiprof::start("100 x  0.01 (threadId + 1)s computations with threads string labels"); 
 
+   phiprof::start("100 x 0.01 (threadId + 1)s, String");
 #pragma omp parallel
    for(int i=0;i<100;i++){
       phiprof::start("compute");
       compute(0.01 * (omp_get_thread_num() + 1));
       phiprof::stop("compute");
    }
-   phiprof::stop("100 x  0.01 (threadId + 1)s computations with threads string labels"); 
+   phiprof::stop("100 x 0.01 (threadId + 1)s, String");
 
 
 

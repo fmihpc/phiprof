@@ -1,7 +1,8 @@
 /*
 This file is part of the phiprof library
 
-Copyright 2011, 2012 Finnish Meteorological Institute
+Copyright 2012, 2013, 2014, 2015 Finnish Meteorological Institute
+Copyright 2015, 2016 CSC - IT Center for Science 
 
 Phiprof is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as

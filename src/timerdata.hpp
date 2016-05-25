@@ -35,7 +35,7 @@ public:
       active.assign(numThreads, false);
    }
 
-   //
+
    static int setThreadCounts(){
 #ifdef _OPENMP
 #pragma omp single

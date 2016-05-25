@@ -12,19 +12,16 @@
 int TimerTree::numThreads = 1;
 int TimerTree::thread = 0;
 bool TimerTree::initialized = false;
-
-
-
-
-
-
-
 const int maxTimers = 10000;
 
-//initialize profiler, called by first start/initializeTimer. This adds the root timer
-TimerTree::TimerTree(){}
-
-int TimerTree::initialize(){
+/*
+  initialize timertree. 
+  
+  Sets the static thread id and count values.  Also adds the root timer.
+*/
+  
+bool TimerTree::initialize(){
+   if(!initialized) {
       std::vector<std::string> group;
       group.push_back("Total");
       //set static variables with threadcounts
@@ -32,7 +29,7 @@ int TimerTree::initialize(){
       TimerTree::setThreadCounts();
       currentId.resize(numThreads);
       setCurrentId(-1);
-
+   
 #pragma omp master
       {
          timers.clear();
@@ -41,14 +38,11 @@ int TimerTree::initialize(){
          timers[0].start();
          timers.reserve(maxTimers); //up to maxtimers we are guaranteed not to
       }
-      
-      //re-allocate (thread safety)
       setCurrentId(0);
       initialized=true;
-
+   }
+   return initialized;
 }
-
-
 
 void TimerTree::setCurrentId(int id){
 #ifdef _OPENMP
@@ -61,7 +55,6 @@ void TimerTree::setCurrentId(int id){
          currentId[i] = id;
       }
    }
-   
 #else
    currentId[thread] = id;
 #endif
@@ -103,9 +96,6 @@ bool TimerTree::start(const std::string &label){
    return true;
    
 }
-
-
-
 
 //stop a timer defined by id
 bool TimerTree::stop (int id,
@@ -166,8 +156,6 @@ bool TimerTree::stop (const std::string &label,
    setCurrentId(timers[currentId[thread]].stop(workUnits, workUnitLabel));
    return true;
 }
-
-
       
 //get id number of a timer, return -1 if it does not exist
 int TimerTree::getChildId(const std::string &label) const{
@@ -180,9 +168,6 @@ int TimerTree::getChildId(const std::string &label) const{
    //nothing found
    return -1;
 }
-
-
-
 
 double TimerTree::getTime(int id) const{
    return timers[id].getAverageTime();

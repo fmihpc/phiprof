@@ -40,9 +40,15 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace phiprof
 {
+  /**
+   * Initialize phiprof
+   *
+   * This function should be called before any other calls to phiprof.
+   * @return
+   *   Returns true if phiprof started successfully.
+   */
 
-   //initialize phiprof
-   int initialize();
+   bool initialize();
   /**
    * Start a profiling timer.
    *

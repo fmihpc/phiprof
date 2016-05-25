@@ -6,8 +6,13 @@
 
 class TimerTree {
 public:
-   TimerTree(); //constructor   
-   int initialize();
+   /**
+   * Initialize the timertree. 
+   *
+   * @return
+   *   Returns true if the timertree started successfully.
+   */
+   bool initialize();
    
   /**
    * Start a profiling timer.

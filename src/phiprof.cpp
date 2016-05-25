@@ -45,8 +45,8 @@ namespace phiprof
       ParallelTimerTree parallelTimerTree; 
    }
 
-   int initialize(){
-      parallelTimerTree.initialize();
+   bool initialize(){
+      return parallelTimerTree.initialize();
    }
    
 

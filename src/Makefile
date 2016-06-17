@@ -1,5 +1,5 @@
 # source files.
-SRC = prettyprinttable.cpp timerdata.cpp timertree.cpp paralleltimertree.cpp  phiprof.cpp  #phiprof_c.cpp
+SRC = prettyprinttable.cpp timerdata.cpp timertree.cpp paralleltimertree.cpp  phiprof.cpp phiprof_c.cpp
 SRC_NO = nophiprof.cpp phiprof_c.cpp
 OBJ = $(SRC:.cpp=.o)
 OBJ_NO = $(SRC_NO:.cpp=.o)
@@ -16,7 +16,7 @@ INCLUDES = -I../include
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -O3 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
+CCFLAGS = -fpic -O3 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
 
 # compiler
 CCC = CC

@@ -68,19 +68,19 @@ namespace phiprof
     */
    int initializeTimer(const std::string &label,const std::vector<std::string> &groups);
    /**
-    * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+    * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups)
     */
    int initializeTimer(const std::string &label);
    /**
-    * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+    * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups)
     */
    int initializeTimer(const std::string &label,const std::string &group1);
    /**
-    * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+    * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups)
     */
    int initializeTimer(const std::string &label,const std::string &group1,const std::string &group2);
    /**
-    * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups);
+    * \overload int phiprof::initializeTimer(const std::string &label,const std::vector<std::string> &groups)
     */
    int initializeTimer(const std::string &label,const std::string &group1,const std::string &group2,const std::string &group3);
 
@@ -92,7 +92,7 @@ namespace phiprof
     * @return
     *  The id of the timer. -1 if it does not exist.
     */
-   int getId(const std::string &label);
+   int getChildId(const std::string &label);
    
    /**
     * Start a profiling timer.
@@ -176,12 +176,6 @@ namespace phiprof
     *   Returns true if pofile printed successfully.
     */
    bool print(MPI_Comm comm, std::string fileNamePrefix="profile");
-
-
-
-
-  
-
 
    /**
     * Assert function

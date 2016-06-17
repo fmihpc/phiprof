@@ -22,8 +22,11 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <limits>
 #include <algorithm>
-#include <omp.h>
 #include <iostream>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "timerdata.hpp"
 #include "timertree.hpp"

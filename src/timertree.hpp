@@ -22,7 +22,9 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #define TIMERTREE_H
 #include <vector>
 #include "timerdata.hpp"
-
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 class TimerTree {
 public:
@@ -65,8 +67,7 @@ public:
       std::vector<int> childIds = timers[currentId[thread]].getChildIds(); 
       if ( std::find(childIds.begin(), childIds.end(), id) == childIds.end() ) {
 #pragma omp critical 
-         std::cerr << "PHIPROF-ERROR for thread "<< thread<< " omp_get_thread_num "<< 
-            omp_get_thread_num() << ": id "<< id << 
+         std::cerr << "PHIPROF-ERROR for thread "<< thread<< ": id "<< id << 
             " is invalid, timer is not child of current timer "<< currentId[thread] << 
             ":" << timers[currentId[thread]].getLabel() << std::endl;
          return false;

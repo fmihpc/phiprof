@@ -26,6 +26,11 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+extern "C" int phiprof_initialize(){
+   return (int)phiprof::initialize();
+
+}
+
 extern "C" int phiprof_initializeTimer(char *label,int nGroups, ... ){
   va_list listPointer;
   vector<string> groupStrings;
@@ -41,8 +46,8 @@ extern "C" int phiprof_initializeTimer(char *label,int nGroups, ... ){
 
 }
 
-extern "C" int phiprof_getId(char *label){
-  return phiprof::getId(string(label));
+extern "C" int phiprof_getChildId(char *label){
+  return phiprof::getChildId(string(label));
 }
 
 

@@ -35,9 +35,9 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #define GET_MACRO(_1,_2,NAME,...) NAME
 #define phiprof_assert(...) GET_MACRO(__VA_ARGS__, phiprof_assert2, phiprof_assert1)(__VA_ARGS__)
 
-
+int phiprof_initialize();
 int phiprof_initializeTimer(char *label,int nGroups, ... );
-int phiprof_getId(char *label);
+int phiprof_getChildId(char *label);
 
 int phiprof_start(char *label);
 int phiprof_stop(char *label);
@@ -46,7 +46,7 @@ int phiprof_startId(int id);
 int phiprof_stopId(int id);
 int phiprof_stopIdUnits(int id,double units,char *unitName);
 
-int phiprof_print(MPI_Comm comm, char *fileNamePrefix, double minFraction);
+int phiprof_print(MPI_Comm comm, char *fileNamePrefix);
 
 void phiprof_phiprofAssert(int condition, char* errorMessage, char* fileName, int line);
 

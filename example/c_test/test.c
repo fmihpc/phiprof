@@ -56,7 +56,9 @@ int main(int argc,char **argv){
    if(rank==0)
       printf( "Measuring performance of start-stop calls\n");
 
+   phiprof_initialize();
    
+
    phiprof_start("Benchmarking phiprof"); 
    phiprof_start("Initalized timers using ID");
 
@@ -97,33 +99,21 @@ int main(int argc,char **argv){
    phiprof_start("Test accuracy");
    if(rank==0)
       printf( "  1/2\n");
-   phiprof_start("100 computations"); 
+   phiprof_start("100 computations x 0.1s"); 
    for(i=0;i<100;i++){
       phiprof_start("compute");
       compute(0.1);
       phiprof_stop("compute");
    }
-   phiprof_stop("100 computations");
+   phiprof_stop("100 computations x 0.1s");
 
-   if(rank==0)
-      printf( "  2/2\n" );
-   MPI_Barrier(MPI_COMM_WORLD);
-   phiprof_start("100 computations + logprofile"); 
-   for(i=0;i<100;i++){
-      phiprof_start("compute");
-      compute(0.1);
-      phiprof_printLogProfile(MPI_COMM_WORLD,i,"profile_log_alllev"," ",0);
-      phiprof_printLogProfile(MPI_COMM_WORLD,i,"profile_log_maxlev1"," ",1);
-      phiprof_stop("compute");
-   }
-   phiprof_stop("100 computations + logprofile"); 
 
    phiprof_stop("Test accuracy");
    
    MPI_Barrier(MPI_COMM_WORLD);
    double t1=MPI_Wtime();
-   phiprof_print(MPI_COMM_WORLD,"profile_full",0.0);
-   phiprof_print(MPI_COMM_WORLD,"profile_minfrac0.01",0.01);
+   phiprof_print(MPI_COMM_WORLD,"profile");
+
    if(rank==0)   
       printf( "Print time is %g\n",MPI_Wtime()-t1);
 

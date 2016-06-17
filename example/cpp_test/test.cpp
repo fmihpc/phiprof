@@ -17,13 +17,12 @@
   License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
-
-#include "mpi.h"
 #include <iostream>
 #include <iomanip> 
 #include <string>    
 #include <vector>     
+#include "mpi.h"
+#include "omp.h"
 #include "phiprof.hpp"
 
 using namespace std;
@@ -58,9 +57,11 @@ int main(int argc,char **argv){
    const int nIterations=1000000;
    if(rank==0)
       cout << "Measuring performance of start-stop calls" <<endl;
-
    
-   phiprof::start("Benchmarking phiprofr"); 
+   phiprof::initialize();
+   
+   phiprof::start("Benchmarking phiprof"); 
+
    phiprof::start("Initalized timers using ID");
 
    if(rank==0)
@@ -74,6 +75,7 @@ int main(int argc,char **argv){
 
    if(rank==0)
       cout << "  2/3" <<endl;
+
    phiprof::start("Re-initialized timers using ID");
    for(int i=0;i<nIterations;i++){
       id_a=phiprof::initializeTimer("a","A with ID");
@@ -89,44 +91,68 @@ int main(int argc,char **argv){
       phiprof::start("a");
       phiprof::stop("a");
    }
-   phiprof::stop("Timers using labels",nIterations*2,"start-stop");
-   phiprof::stop("Benchmarking phiprofr"); 
+   phiprof::stop("Timers using labels", nIterations*2, "start-stop");
+   phiprof::stop("Benchmarking phiprof"); 
 
    MPI_Barrier(MPI_COMM_WORLD);
 
    if(rank==0)
       cout << "Measuring accuracy" <<endl;
-/*
+
+
    phiprof::start("Test accuracy");
-   if(rank==0)
-      cout << "  1/2" <<endl;
-   phiprof::start("100x0.1s computations"); 
-   for(int i=0;i<100;i++){
-      phiprof::start("compute");
-      compute(0.1);
-      phiprof::stop("compute");
-   }
-   phiprof::stop("100x0.1s computations");
 
    if(rank==0)
-      cout << "  2/2" <<endl;
-   MPI_Barrier(MPI_COMM_WORLD);
-   phiprof::start("100x0.1s computations + logprofile"); 
+      cout << "  1/3" <<endl;
+   phiprof::start("100x0.01s computations"); 
    for(int i=0;i<100;i++){
       phiprof::start("compute");
-      compute(0.1);
-      phiprof::printLogProfile(MPI_COMM_WORLD,i);
-      phiprof::printLogProfile(MPI_COMM_WORLD,i,"profile_log_maxlev1"," ",1);
+      compute(0.01);
       phiprof::stop("compute");
    }
-   phiprof::stop("100x0.1s computations + logprofile"); 
+   phiprof::stop("100x0.01s computations");
+
+   if(rank==0)
+      cout << "  2/3" <<endl;
+   MPI_Barrier(MPI_COMM_WORLD);
+
+   phiprof::start("100 x 0.01 (threadId + 1)s, ID");
+   int id = phiprof::initializeTimer("compute");
+#pragma omp parallel
+   for(int i=0;i<100;i++){
+      phiprof::start(id);
+      compute(0.01 * (omp_get_thread_num() + 1));
+      phiprof::stop(id);
+   }
+   phiprof::stop("100 x 0.01 (threadId + 1)s, ID"); 
+
+   if(rank==0)
+      cout << "  3/3" <<endl;
+   MPI_Barrier(MPI_COMM_WORLD);
+
+   phiprof::start("100 x 0.01 (threadId + 1)s, String");
+#pragma omp parallel
+   for(int i=0;i<100;i++){
+      phiprof::start("compute");
+      compute(0.01 * (omp_get_thread_num() + 1));
+      phiprof::stop("compute");
+   }
+   phiprof::stop("100 x 0.01 (threadId + 1)s, String");
+
+
 
    phiprof::stop("Test accuracy");
-*/   
+
+   if(rank%2 == 1) {
+      
+      phiprof::start("Test-profile-groups");
+      phiprof::stop("Test-profile-groups");
+   }
+   
+
    MPI_Barrier(MPI_COMM_WORLD);
    double t1=MPI_Wtime();
    phiprof::print(MPI_COMM_WORLD);
-   phiprof::print(MPI_COMM_WORLD,"profile_minfrac0.01",0.01);
    if(rank==0)   
       cout<< "Print time is "<<MPI_Wtime()-t1<<endl;
 //   phiprof::print(MPI_COMM_WORLD,0.1);

@@ -43,8 +43,7 @@ namespace phiprof
    int initializeTimer(const string &label,const string &group1,const string &group2,const string &group3){return 0;}
    int initializeTimer(const string &label){return 0;}
 
-   bool print(MPI_Comm comm,std::string fileNamePrefix,double minFraction){return true;}
-   bool printLogProfile(MPI_Comm comm,double simulationTime,std::string fileNamePrefix,std::string separator,int maxLevel){return true;}
+   bool print(MPI_Comm comm,std::string fileNamePrefix){return true;}
 
 
 }

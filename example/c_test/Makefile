@@ -6,17 +6,17 @@ OBJ = $(SRC:.c=.o)
 INCLUDES = 
 
 # C compiler flags (-g -O2 -Wall)
-CFLAGS = -O3 -I../../include 
-LDFLAGS = -L../../lib -lphiprof
+CFLAGS = -O3 -I../../include -fopenmp
+LDFLAGS = -L../../lib -lphiprof  -lgomp -ldl
 # compiler
-CCC = mpicc
+CCC = cc
 # linker (c++ compiler)
-LNK = mpiCC
+LNK = CC
 
 .SUFFIXES: .c
 
 default: $(OBJ) 
-	$(LNK) -o test  $(OBJ) $(LDFLAGS) 
+	$(LNK) -o test   $(OBJ)  $(LDFLAGS) 
 
 .c.o:
 	$(CCC) $(INCLUDES) $(CFLAGS) -c $< -o $@

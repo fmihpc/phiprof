@@ -1,26 +1,29 @@
 Phiprof – Parallel Hierarchical Profiler
 
-Copyright (c) 2011,2012 Finnish Meteorological Institute
-Author: Sebastian von Alfthan (sebastian.von.alfthan at fmi.fi)
+Copyright (c) 2011 - 2015 Finnish Meteorological Institute
+Copyright (c) 2016   CSC - IT Center for Science
+
+Licence: LGPL 3
+
+Author: Sebastian von Alfthan (sebastian.von.alfthan at csc.fi)
+
 
 Phiprof a simple library that can be used to profile parallel MPI
-programs developed at the Finnish Meteorological Institute. It can be
-used to produce a hierarchical report of time (average, max, min)
-spent in different timer regions. A log format can also be written,
-where the performance as a function of time may be reported.
+programs developed originally at the Finnish Meteorological
+Institute. It can be used to produce a hierarchical report of time
+(average, max, min) spent in different timer regions. A log format can
+also be written, where the performance as a function of time may be
+reported.
 
 
 Features
   * Supports C++ and C (C programs have to be linked with a C++ compiler)
   * Low overhead (Less than 1 us)
   * Can print the total time as a human-readable hierarchical report
-  * Can print the evolution of time metrics in a easy-to-parse format to track how the performance develops over time
   * Automatically handles cases where groups of processes execute different codepaths
-  * (Cray specific) All timer regions are also defined as Craypat regions if Craypat module is loaded
 
 Not supported
   * No Fortran interface
-  * Phiprof is not threadsafe, it should only be called by the master thread, or outside of threaded regions.
   * Phiprof does not automatically add regions, these have to be added manually into the code.
 
 

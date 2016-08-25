@@ -261,20 +261,23 @@ std::string TimerTree::getFullLabel(int id,bool reverse) const{
    return fullLabel;
 }
 
-//reset timers to zero.
+//reset timers to zero recursively for all descendants
 void TimerTree::resetTime(double resetWallTime, int id){
-   timers[id].resetTime(resetWallTime);
    for(auto &childId : timers[id].getChildIds() ){
-      timers[childId].resetTime(resetWallTime);
+      resetTime(resetWallTime, childId);
    }
+   timers[id].resetTime(resetWallTime);
 }
 
-//remove, e.g., printtime from timings by pushing forward start_time
+//remove, e.g., printtime from timings by pushing forward start_time,
+//recursive function
 void TimerTree::shiftActiveStartTime(double shiftTime, int id){
-   timers[id].shiftActiveStartTime(shiftTime);
+
    for(auto &childId : timers[id].getChildIds() ){
-      timers[childId].shiftActiveStartTime(shiftTime);
+      shiftActiveStartTime(shiftTime, childId);
    }
+
+   timers[id].shiftActiveStartTime(shiftTime);
 }
 
 

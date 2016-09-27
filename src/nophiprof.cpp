@@ -33,7 +33,9 @@ namespace phiprof
    bool stop (const string &label,double workUnits,
 	    const string &workUnitLabel){return true;}
 
+   bool stop (int id){return true;}
    
+   bool initialize(){return true;}
 
    int getId(const string &label) {return 0;}
 

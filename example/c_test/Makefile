@@ -9,9 +9,9 @@ INCLUDES =
 CFLAGS = -O3 -I../../include -fopenmp
 LDFLAGS = -L../../lib -lphiprof  -lgomp -ldl
 # compiler
-CCC = cc
+CCC = mpicc
 # linker (c++ compiler)
-LNK = CC
+LNK = mpiCC
 
 .SUFFIXES: .c
 

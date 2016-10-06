@@ -26,27 +26,29 @@ using namespace std;
 
 namespace phiprof
 {
-   bool start(int id){return true;}
-   bool stop (int id,double workUnits,
-	    const string &workUnitLabel){return true;}
-   bool start(const string &label){return true;}
-   bool stop (const string &label,double workUnits,
-	    const string &workUnitLabel){return true;}
-
-   bool stop (int id){return true;}
-   
    bool initialize(){return true;}
 
-   int getId(const string &label) {return 0;}
+   bool start(int id){return true;}
+   bool start(const string &label){return true;}
+
+   bool stop (int id) {return true;}
+   bool stop (int id,double workUnits, const string &workUnitLabel){return true;}
+   bool stop (const string &label,double workUnits, const string &workUnitLabel){return true;}
+
+   int getChildId(const std::string &label) {return 0;}
 
    int initializeTimer(const string &label,const vector<string> &groups) { return 0;}
+   int initializeTimer(const string &label){return 0;}
    int initializeTimer(const string &label,const string &group1){return 0;}
    int initializeTimer(const string &label,const string &group1,const string &group2){return 0;}
    int initializeTimer(const string &label,const string &group1,const string &group2,const string &group3){return 0;}
-   int initializeTimer(const string &label){return 0;}
 
    bool print(MPI_Comm comm,std::string fileNamePrefix){return true;}
 
+   void phiprofAssert(bool condition, const std::string error_message, 
+                      const std::string  file, int line ) 
+   {}
+   
 
 }
 

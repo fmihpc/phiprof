@@ -7,9 +7,9 @@ INCLUDES =
 
 # C++ compiler flags (-g -O2 -Wall)
 CCFLAGS = -O3 -I../../include  -fopenmp
-LDFLAGS = -L../../lib -lphiprof  -lgomp -ldl
+LDFLAGS = -L../../lib -lphiprof  -lgomp -ldl -lrt
 # compiler
-CCC = CC
+CCC = mpiCC
 
 
 .SUFFIXES: .cpp

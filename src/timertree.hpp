@@ -21,6 +21,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TIMERTREE_H
 #define TIMERTREE_H
 #include <vector>
+#include <string>
 #include "timerdata.hpp"
 #ifdef _OPENMP
 #include <omp.h>
@@ -173,12 +174,13 @@ public:
    double getTime(int id) const;
    int getChildId(const std::string &label) const;
    double getGroupTime(std::string group, int id) const;
-   int getHash(int id=0) const;
+   int getHash() const;
    std::string getFullLabel(int id,bool reverse=false) const;  
 
 
 
 protected:
+   std::string getHashString(int id) const;
    
 
    static int setThreadCounts(){
@@ -207,7 +209,7 @@ protected:
 
    std::vector<int> currentId;
    std::vector<TimerData> timers;
-
+   
 
    
 };

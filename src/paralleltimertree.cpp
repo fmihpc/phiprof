@@ -179,21 +179,23 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
       in.rank = reportRank;
       threadImbalance.push_back(in.val);
       threadImbalanceRank.push_back(in);
-      
-      workUnits.push_back(-1);
+      workUnits.push_back(-1.0);
       parentIndices.push_back(currentIndex);
    }
          
    //End of function for id=0, we have now collected all timer data.
    //compute statistics now
    if(id==0){
-      int nTimers=time.size();
+      int nTimers=time.size(); //note, this also includes the "other"
+                               //timers
       if(rankInPrint == 0){
+         std::vector<double> workUnitsMin;
          stats.timeSum.resize(nTimers);
          stats.timeMax.resize(nTimers);
          stats.timeMin.resize(nTimers);
          stats.workUnitsSum.resize(nTimers);
          stats.hasWorkUnits.resize(nTimers);
+         workUnitsMin.resize(nTimers);
          stats.countSum.resize(nTimers);
          stats.threadsSum.resize(nTimers);
          stats.threadImbalanceSum.resize(nTimers);
@@ -203,8 +205,8 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
 
          stats.timeTotalFraction.resize(nTimers);
          stats.timeParentFraction.resize(nTimers);
-         std::vector<double> workUnitsMin;
-         workUnitsMin.resize(nTimers);
+
+
 
          MPI_Reduce(&(time[0]),&(stats.timeSum[0]),nTimers,MPI_DOUBLE,MPI_SUM,0,printComm);
          MPI_Reduce(&(timeRank[0]),&(stats.timeMax[0]),nTimers,MPI_DOUBLE_INT,MPI_MAXLOC,0,printComm);
@@ -221,9 +223,9 @@ void ParallelTimerTree::collectTimerStats(int reportRank, int id, int parentInde
                
          for(int i=0;i<nTimers;i++){
             if(stats.workUnitsSum[i] <= 0)
-               stats.hasWorkUnits[i]=false;
+               stats.hasWorkUnits[i] = false;
             else
-               stats.hasWorkUnits[i]=true;
+               stats.hasWorkUnits[i] = true;
                   
             if(stats.timeSum[0]>0)
                stats.timeTotalFraction[i]=stats.timeSum[i]/stats.timeSum[0];
@@ -343,10 +345,8 @@ bool ParallelTimerTree::printGroupStatistics(double minFraction,
 bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
    int rank,nProcesses;
 
-
    if(rankInPrint==0){
       PrettyPrintTable table;
-
       //print Title
       std::stringstream buffer;
       if(minFraction > 0.0 ) {
@@ -368,7 +368,6 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
       }
       table.addTitle(buffer.str());
       buffer.str("");
-
       
       //print heders
       table.addHorizontalLine();      
@@ -442,8 +441,7 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
                table.addElement("");
                table.addElement("");
             }
-
-            if(stats.hasWorkUnits[i]){
+            if(stats.hasWorkUnits[i] && id != -1){
                buffer.str("");
                
                //print if units defined for all processes
@@ -622,7 +620,7 @@ bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
    MPI_Comm_rank(printComm,&rankInPrint);
    MPI_Comm_size(printComm,&nProcessesInPrint);
    
-      //communicator with printComm masters(rank=0), this will be used to number the printComm's
+   //communicator with printComm masters(rank=0), this will be used to number the printComm's
    MPI_Comm printCommMasters;
    MPI_Comm_split(comm,rankInPrint==0,-nProcessesInPrint,&printCommMasters);
    MPI_Comm_rank(printCommMasters,&printIndex);
@@ -670,6 +668,7 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix)
       fname << fileNamePrefix << "_" << printIndex << ".txt";
       collectTimerStats(rank);
       collectGroupStats();
+
       if(rankInPrint == 0){
          std::ofstream output;
          std::map<std::string, std::string> groupIds;
@@ -684,8 +683,9 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix)
          printTimersDetailed(0.0, groupIds, output);
          output.close();
       }
-   } 
-   MPI_Comm_free(&printComm);
+      MPI_Comm_free(&printComm);
+   }
+
    MPI_Barrier(comm);   
    double endPrintTime = wTime();
    shiftActiveStartTime(endPrintTime - printStartTime);

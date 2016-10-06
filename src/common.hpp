@@ -23,19 +23,6 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #define COMMON_H
 #include <time.h>
 
-//djb2 hash function copied from
-//http://www.cse.yorku.ca/~oz/hash.html
-//TODO: replace by a better one
-inline unsigned long hash(const char *str) {
-   unsigned long hash = 5381;
-   int c;
-   while ( (c = *str++) )
-      hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-   return hash;
-}
-
-
-
 //this function returns the time in seconds . 
 inline double wTime(){
 //time struct to get wall time

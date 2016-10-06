@@ -19,6 +19,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <vector>
+#include <unordered_map> //for hasher
 #include <string>
 #include <limits>
 #include <algorithm>
@@ -215,23 +216,27 @@ double TimerTree::getGroupTime(std::string group, int id) const{
 }
          
 //Hash value identifying all labels, groups and workunitlabels.
-//If any std::strings differ, hash should differ. Computed recursively in the same way as prints
-int TimerTree::getHash(int id) const{
-   unsigned long hashValue;
-   //add hash values from label, workunitlabel and groups. Everything has to match.
-   hashValue = timers[id].getHash();
-   //add hash values from descendants 
-   for(auto &childId : timers[id].getChildIds() ){
-      hashValue += getHash(childId);
-   }
-   
+int TimerTree::getHash() const{
+   std::string hashString = getHashString(0); //starting from root, construct a
+                                         //string representing the tree.
+   std::hash< std::string> hasher;
+   int hashValue = (int)(hasher(hashString) % std::numeric_limits<int>::max());
    // MPI_Comm_split needs a non-zero value
    if (hashValue == 0) {
       return 1;
    } else {
-      //we return an integer value
-      return hashValue%std::numeric_limits<int>::max();
+      return hashValue;
    }
+}
+std::string TimerTree::getHashString(int id) const{
+   std::string hashString;  
+   //add hash values from label, workunitlabel and groups. Everything has to match.
+   hashString = timers[id].getStringForHash();
+   //add hash values from descendants 
+   for(const auto& childId : timers[id].getChildIds() ){
+      hashString += getHashString(childId);
+   }
+   return hashString;
 }
 
 //get full hierarchical name for a timer

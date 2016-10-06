@@ -194,25 +194,16 @@ public:
 
    
 
-//Hash value identifying all labels, groups and workunitlabels.
-//If any std::strings differ, hash should differ. Computed recursively in the same way as prints
-   int getHash() const{
-      unsigned long hashValue;
-      //add hash values from label, workunitlabel and groups. Everything has to match.
-      hashValue=hash(label.c_str());
-      hashValue+=hash(workUnitLabel.c_str());
-      for (std::vector<std::string>::const_iterator g = groups.begin();g != groups.end(); ++g ) {
-         hashValue+=hash((*g).c_str());
+//String with label, groups and workunitlabel.
+   std::string getStringForHash() const{
+      std::string hashString = label;
+      hashString += workUnitLabel;
+      for (const auto& g: groups) {
+         hashString += g;
       }
-      
-      // MPI_Comm_split needs a non-zero value
-      if (hashValue == 0) {
-         return 1;
-      } else {
-         //we return an integer value
-         return hashValue%std::numeric_limits<int>::max();
-      }
+      return hashString;
    }
+   
    
    void resetTime(double resetWallTime){
       count.assign(count.size(), 0);

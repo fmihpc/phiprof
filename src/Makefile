@@ -3,8 +3,11 @@ SRC = prettyprinttable.cpp timerdata.cpp timertree.cpp paralleltimertree.cpp  ph
 SRC_NO = nophiprof.cpp phiprof_c.cpp
 OBJ = $(SRC:.cpp=.o)
 OBJ_NO = $(SRC_NO:.cpp=.o)
-OUT = ../lib/libphiprof.a
-OUT_NO = ../lib/libnophiprof.a
+OUT_STATIC = ../lib/libphiprof.a
+OUT_STATIC_NO = ../lib/libnophiprof.a
+OUT_SHARED = ../lib/libphiprof.so
+OUT_SHARED_NO = ../lib/libnophiprof.so
+
 
 # include directories
 INCLUDES = -I../include
@@ -21,30 +24,34 @@ CCFLAGS = -fpic -O3 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_
 # compiler
 CCC = mpiCC
 
-# library paths
-LIBS = 
-
 # compile flags
-LDFLAGS =  -lgomp 
+LDFLAGS =  -lgomp -lstdc++ 
 
 .SUFFIXES: .cpp
 
-default: $(OUT) $(OUT_NO)
+default: $(OUT_STATIC) $(OUT_STATIC_NO) $(OUT_SHARED)  $(OUT_SHARED_NO)
 
 .cpp.o:
 	$(CCC) $(INCLUDES) $(CCFLAGS) -c $< -o $@
 
-$(OUT): $(OBJ) libdir
-	ar rcs $(OUT) $(OBJ)
+$(OUT_STATIC): $(OBJ) libdir
+	ar rcs $(OUT_STATIC) $(OBJ)
 
-$(OUT_NO): $(OBJ_NO) libdir
-	ar rcs $(OUT_NO) $(OBJ_NO)
+$(OUT_STATIC_NO): $(OBJ_NO) libdir
+	ar rcs $(OUT_STATIC_NO) $(OBJ_NO)
+
+
+$(OUT_SHARED): $(OBJ) libdir
+	$(CCC) -shared $(OBJ) -o $(OUT_SHARED) $(LDFLAGS)
+
+$(OUT_SHARED_NO): $(OBJ_NO) libdir
+	$(CCC) -shared $(OBJ_NO) -o $(OUT_SHARED_NO) $(LDFLAGS)
 
 libdir:
 	mkdir -p ../lib
 
 clean:
-	rm -f $(OBJ) $(OUT) $(OBJ_NO) $(OUT_NO)
+	rm -f $(OBJ) $(OUT_STATIC) $(OBJ_NO) $(OUT_STATIC_NO) $(OUT_SHARED) $(OUT_SHARED_NO)
 
 phiprof.o: ../include/phiprof.hpp
 

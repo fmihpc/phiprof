@@ -7,11 +7,11 @@ INCLUDES =
 
 # C compiler flags (-g -O2 -Wall)
 CFLAGS = -O3 -I../../include -fopenmp
-LDFLAGS = -L../../lib -lphiprof  -lgomp -ldl
+LDFLAGS = -L../../lib -dynamic -lphiprof  -lgomp -ldl
 # compiler
 CCC = mpicc
-# linker (c++ compiler)
-LNK = mpiCC
+# linker 
+LNK = mpicc
 
 .SUFFIXES: .c
 

@@ -653,7 +653,7 @@ bool ParallelTimerTree::getPrintCommunicator(int &printIndex,int &timersHash){
 
 bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix){
    int timersHash,printIndex;
-         
+   
    //printStartTime defined in namespace, used to correct timings for open timers
    printStartTime = wTime();
    comm = communicator; //no dup, we will only use it without
@@ -668,19 +668,48 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix)
       fname << fileNamePrefix << "_" << printIndex << ".txt";
       collectTimerStats(rank);
       collectGroupStats();
-
+      
       if(rankInPrint == 0){
+         char *envVariable;
+         std::vector<std::string> prints;
          std::ofstream output;
          std::map<std::string, std::string> groupIds;
+
+         /*read from environment variable what to print**/
+         envVariable = getenv("PHIPROF_PRINTS");
+         if(envVariable != NULL) {
+            char *substring;
+            substring = strtok(envVariable, ",");
+            while(substring != NULL) {
+               prints.push_back(std::string(substring));
+               substring = strtok(NULL, ",");
+            }
+         }
+         else {
+            //set default print
+            prints.push_back("groups");
+            prints.push_back("compact");
+         }
+         
          getGroupIds(groupIds);
          output.open(fname.str(), std::fstream::out);
          if (output.good() == false)
             return false;
-
-         printGroupStatistics(0.0, groupIds, output);
-         printTimers(0.01, groupIds, output);
-         printTimers(0.0, groupIds, output);
-         printTimersDetailed(0.0, groupIds, output);
+         
+         for(const auto& p: prints) {
+            if(p == "groups")
+               printGroupStatistics(0.0, groupIds, output);
+            else if(p=="compact")
+               printTimers(0.01, groupIds, output);
+            else if(p=="full")
+               printTimers(0.0, groupIds, output);
+            else if(p=="detailed")
+               printTimersDetailed(0.0, groupIds, output);
+            else
+               if(rank == 0)
+                  //Only really need the warning from one process
+                  std::cerr <<"phiprof warning: nonexistent print style " << p << " in PHIPROF_PRINTS" << std::endl;
+         }
          output.close();
       }
       MPI_Comm_free(&printComm);

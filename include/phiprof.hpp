@@ -25,16 +25,6 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include "vector"
 #include "mpi.h"
 
-#ifndef NDEBUG
-#define phiprof_assert2(a,b) phiprof::phiprofAssert( a, b, __FILE__, __LINE__ )
-#define phiprof_assert1(a) phiprof::phiprofAssert( a, #a, __FILE__, __LINE__ )
-#else
-#define phiprof_assert2(a,b)
-#define phiprof_assert1(a) 
-#endif
-#define GET_MACRO(_1,_2,NAME,...) NAME
-#define phiprof_assert(...) GET_MACRO(__VA_ARGS__, phiprof_assert2, phiprof_assert1)(__VA_ARGS__)
-
    
 
 /* This files contains the C++ interface */
@@ -177,25 +167,6 @@ namespace phiprof
     */
    bool print(MPI_Comm comm, std::string fileNamePrefix="profile");
 
-   /**
-    * Assert function
-    *
-    * It prints out the error message, the suplied line and file
-    * information. It also prints out the current position in the timer
-    * stack in phiprof. Finally it terminates the process, and thus the
-    * whole parallel program. Can also be used through the
-    * phiprof_assert macro
-    *
-    * @param condition
-    *   If false, then the error is raised.
-    * @param error_message
-    *   The error message
-    * @param file
-    *   The source  file where this is called, typically supplied by  __FILE__
-    * @param line     
-    *   The line in the source  file where this is called, typically supplied by  __LINE__ 
-    */
-   void phiprofAssert(bool condition, const std::string error_message, const std::string  file, int line );
 }
 
 

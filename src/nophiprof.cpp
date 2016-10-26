@@ -44,10 +44,6 @@ namespace phiprof
    int initializeTimer(const string &label,const string &group1,const string &group2,const string &group3){return 0;}
 
    bool print(MPI_Comm comm,std::string fileNamePrefix){return true;}
-
-   void phiprofAssert(bool condition, const std::string error_message, 
-                      const std::string  file, int line ) 
-   {}
    
 
 }

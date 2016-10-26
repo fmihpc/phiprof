@@ -87,6 +87,3 @@ extern "C" int phiprof_print(MPI_Comm comm, char *fileNamePrefix){
   return (int)phiprof::print(comm,string(fileNamePrefix));
 }
 
-extern "C"  void phiprof_phiprofAssert(int condition, char *errorMessage, char *fileName, int line ) {
-   phiprof::phiprofAssert(condition != 0,string(errorMessage), string(fileName), line);
-}

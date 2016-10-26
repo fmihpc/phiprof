@@ -125,24 +125,6 @@ namespace phiprof
       return parallelTimerTree.getChildId(label);
    }
    
-      
-   void phiprofAssert(bool condition, const string error_message, const string  file, int line ) {
-#ifndef NDEBUG
-      if(!condition) {
-#pragma omp critical
-         {
-            int rank;
-            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-            cerr << "ASSERT ERROR on process "<< rank << ": " << error_message      
-                 << ", File: " << file << ", Line: " << line
-                 << endl;       
-            exit(1);
-         }
-      }
-#endif
-      return;
-   }
-   
 }
 
 

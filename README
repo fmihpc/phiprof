@@ -9,15 +9,13 @@ Author: Sebastian von Alfthan (sebastian.von.alfthan at csc.fi)
 
 
 Phiprof a simple library that can be used to profile parallel MPI
-programs developed originally at the Finnish Meteorological
-Institute. It can be used to produce a hierarchical report of time
+programs. It can be used to produce a hierarchical report of time
 (average, max, min) spent in different timer regions. A log format can
 also be written, where the performance as a function of time may be
 reported.
 
-
 Features
-  * Supports C++ and C (C programs have to be linked with a C++ compiler)
+  * Supports C++ and C 
   * Low overhead (Less than 1 us)
   * Can print the total time as a human-readable hierarchical report
   * Automatically handles cases where groups of processes execute different codepaths
@@ -29,14 +27,25 @@ Not supported
 
 INSTALLATION
 
-Enter phiprof/src folder
-edit Makefile 
-make
-Install lib and .h files from phiprof/lib and phiprof/include into suitable location 
+1) Enter src/ folder
+
+2) Edit Makefile if needed to set the correct compilation options and
+compiler names. Phiprof should be compiled with a MPI compiler and
+openmp threading should be enabled
+
+3) make 
+
+4) The library files are after compilation in lib/ and headers in
+include/ . These can manually be moved to sensible locations, or one
+can add the correct -I and -L flags to the compiler commands. For
+shared library you may also need to add the path to LD_LIBRARY_PATH
+
+
 
 USAGE
 
-Look at the examples in phiprof/example and read the descriptions in include/phiprof.hpp
+Look at the examples in phiprof/example (in particular hello_world)
+and read the descriptions in include/phiprof.hpp.
 
 
 

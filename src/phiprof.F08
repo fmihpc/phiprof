@@ -95,15 +95,6 @@ module phiprof
 	end function phiprof_print
 
 
-	subroutine phiprof_phiprofAssert(condition, errorMessage, fileName, line) bind(C,name=phiprof_phiprofAssert) 
-		! the C interface is void phiprof_phiprofAssert(int condition, char* errorMessage, char* fileName, int line);
-		use, intrinsic :: ISO_C_BINDING
-		implicit none
-		real(kind=INT), intent(inout) :: condition
-		character(kind=C_CHAR), intent(inout) :: errorMessage(*)
-		character(kind=C_CHAR), intent(inout) :: fileName(*)
-		integer(kind=C_INT), intent(inout) :: line
-	end function phiprof_print	
 	
   end interface
   

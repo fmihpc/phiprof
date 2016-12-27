@@ -9,8 +9,6 @@ OUT_SHARED = ../lib/libphiprof.so
 OUT_SHARED_NO = ../lib/libnophiprof.so
 
 
-# include directories
-INCLUDES = -I../include
 
 #Set clock.
 #CLOCK_MONOTONIC_COARSE is (much) faster, but has very poor
@@ -22,22 +20,28 @@ CLOCK_ID = CLOCK_MONOTONIC
 CCFLAGS = -fpic -O3 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
 
 # compiler
-CCC = mpiCC
+CCC = CC
 
 # compile flags
 LDFLAGS =  -lgomp -lstdc++ 
 
 .SUFFIXES: .cpp
 
+
 default: $(OUT_STATIC) $(OUT_STATIC_NO) $(OUT_SHARED)  $(OUT_SHARED_NO)
 
-.cpp.o:
-	$(CCC) $(INCLUDES) $(CCFLAGS) -c $< -o $@
+static:  $(OUT_STATIC) $(OUT_STATIC_NO) 
 
-$(OUT_STATIC): $(OBJ) libdir
+shared: $(OUT_SHARED)  $(OUT_SHARED_NO)
+
+
+.cpp.o:
+	$(CCC) $(CCFLAGS) -c $< -o $@
+
+$(OUT_STATIC): $(OBJ) libdir includedir
 	ar rcs $(OUT_STATIC) $(OBJ)
 
-$(OUT_STATIC_NO): $(OBJ_NO) libdir
+$(OUT_STATIC_NO): $(OBJ_NO) libdir includedir
 	ar rcs $(OUT_STATIC_NO) $(OBJ_NO)
 
 
@@ -49,11 +53,14 @@ $(OUT_SHARED_NO): $(OBJ_NO) libdir
 
 libdir:
 	mkdir -p ../lib
+includedir:
+	mkdir -p ../include
+	cp phiprof.hpp phiprof.h ../include
 
 clean:
 	rm -f $(OBJ) $(OUT_STATIC) $(OBJ_NO) $(OUT_STATIC_NO) $(OUT_SHARED) $(OUT_SHARED_NO)
 
-phiprof.o: ../include/phiprof.hpp
+phiprof.o: phiprof.hpp
 
 
-nophiprof.o: ../include/phiprof.hpp
+nophiprof.o: phiprof.hpp

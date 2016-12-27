@@ -23,6 +23,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include "phiprof.hpp"
 #include <stdio.h>
 #include <stdarg.h>
+#include <mpi.h>
 
 using namespace std;
 
@@ -97,5 +98,9 @@ extern "C" int phiprof_stopIdUnits(int id,double units,char *unitName){
 
 extern "C" int phiprof_print(MPI_Comm comm, char *fileNamePrefix){
   return (int)phiprof::print(comm,string(fileNamePrefix));
+}
+
+extern "C" int phiprof_print_from_fortran(int comm, char *fileNamePrefix){
+   return (int)phiprof::print(MPI_Comm_f2c(comm),string(fileNamePrefix));
 }
 

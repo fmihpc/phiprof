@@ -4,8 +4,16 @@ module phiprof
   implicit none
 
   interface  
+     function phiprof_initialize() bind(C,name='phiprof_initialize') result(stat)
+       ! the C interface is int phiprof_initialize()
+       use, intrinsic :: ISO_C_BINDING
+       implicit none
+       integer(kind=C_INT) :: stat
+     end function phiprof_initialize
+
+
      function phiprof_initializeTimer(label) bind(C,name='phiprof_initializeTimer') result(stat)
-       ! the C interface is int phiprof_initializeTimer(char *label,int nGroups, ... )
+       ! the C interface is int phiprof_initializeTimer(char *label)
        use, intrinsic :: ISO_C_BINDING
        implicit none
        character(kind=C_CHAR), intent(inout) :: label(*)   
@@ -41,7 +49,7 @@ module phiprof
        use, intrinsic :: ISO_C_BINDING
        implicit none
        character(kind=C_CHAR), intent(in) :: name(*)   
-       real(kind=C_DOUBLE), intent(in) :: units
+       real(kind=C_DOUBLE), value, intent(in) :: units
        character(kind=C_CHAR), intent(in) :: unitName(*) 
        integer(kind=C_INT) :: stat
      end function phiprof_stopUnits
@@ -50,7 +58,7 @@ module phiprof
        ! the C interface is int phiprof_startId(int id);
        use, intrinsic :: ISO_C_BINDING
        implicit none
-       integer(kind=C_INT), intent(in) :: id
+       integer(kind=C_INT), value, intent(in) :: id
        integer(kind=C_INT) :: stat
      end function phiprof_startId
 
@@ -58,7 +66,7 @@ module phiprof
        ! the C interface is int phiprof_stopId(int id);
        use, intrinsic :: ISO_C_BINDING
        implicit none
-       integer(kind=C_INT), intent(in) :: id   
+       integer(kind=C_INT), value,  intent(in) :: id   
        integer(kind=C_INT) :: stat
      end function phiprof_stopId
 
@@ -66,18 +74,18 @@ module phiprof
        ! the C interface is int phiprof_stopIdUnits(int id,double units,char *unitName);
        use, intrinsic :: ISO_C_BINDING
        implicit none
-       integer(kind=C_INT), intent(in) :: id  
-       real(kind=C_DOUBLE), intent(in) :: units
+       integer(kind=C_INT), value, intent(in) :: id  
+       real(kind=C_DOUBLE), value, intent(in) :: units
        character(kind=C_CHAR), intent(in) :: unitName(*) 
        integer(kind=C_INT) :: stat
      end function phiprof_stopIdUnits
 
 
-     function phiprof_print(comm, fileNamePrefix) bind(C,name='phiprof_print') result(stat)
+     function phiprof_print(comm, fileNamePrefix) bind(C,name='phiprof_print_from_fortran') result(stat)
        ! the C interface is int phiprof_print(MPI_Comm comm, char *fileNamePrefix);
        use, intrinsic :: ISO_C_BINDING
        implicit none
-       integer(kind=C_INT), intent(in) :: comm 
+       integer(c_int), value, intent(in) :: comm 
        character(kind=C_CHAR), intent(in) :: fileNamePrefix(*)
        integer(kind=C_INT) :: stat
      end function phiprof_print

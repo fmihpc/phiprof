@@ -39,7 +39,7 @@ shared: $(OUT_SHARED)  $(OUT_SHARED_NO) phiprof.mod
 .cpp.o:
 	$(CCC) $(CCFLAGS) -c $< -o $@
 
-phiprof.mod: phiprof.F08
+phiprof.mod: phiprof.F08 
 	$(FTN)  -c phiprof.F08
 
 $(OUT_STATIC): $(OBJ) libdir includedir
@@ -57,9 +57,12 @@ $(OUT_SHARED_NO): $(OBJ_NO) libdir
 
 libdir:
 	mkdir -p ../lib
-includedir:
+
+includedir: phiprof.mod
 	mkdir -p ../include
-	cp phiprof.hpp phiprof.h ../include
+	cp phiprof.hpp phiprof.h phiprof.mod ../include
+
+
 
 clean:
 	rm -f $(OBJ) *.mod $(OUT_STATIC) $(OBJ_NO) $(OUT_STATIC_NO) $(OUT_SHARED) $(OUT_SHARED_NO)

@@ -65,7 +65,7 @@ int main(int argc,char **argv){
    if(rank==0)
       printf( "  1/3\n" );
 
-   int id_a=phiprof_initializeTimer("a",1,"A with ID");
+   int id_a=phiprof_initializeTimerWithGroups1("a","A with ID");
    for(i=0;i<nIterations;i++){
       phiprof_startId(id_a);
       phiprof_stopId(id_a);
@@ -76,7 +76,7 @@ int main(int argc,char **argv){
       printf( "  2/3\n" );
    phiprof_start("Re-initialized timers using ID");
    for(i=0;i<nIterations;i++){
-     int id_a=phiprof_initializeTimer("a",1,"A with ID");
+     int id_a=phiprof_initializeTimerWithGroups1("a","A with ID");
      phiprof_startId(id_a);
      phiprof_stopId(id_a);
    }

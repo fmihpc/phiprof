@@ -31,20 +31,32 @@ extern "C" int phiprof_initialize(){
 
 }
 
-extern "C" int phiprof_initializeTimer(char *label,int nGroups, ... ){
-  va_list listPointer;
-  vector<string> groupStrings;
-  va_start( listPointer, nGroups );
 
-  for (int i=0;i<nGroups;i++)  {
-      char *group = va_arg( listPointer, char* );
-      groupStrings.push_back(string(group));
-  }
-  va_end( listPointer );
-
-  return phiprof::initializeTimer(string(label),groupStrings);
-
+extern "C" int phiprof_initializeTimer(char *label){
+  return phiprof::initializeTimer(string(label));
 }
+extern "C" int phiprof_initializeTimerWithGroups(char *label,int nGroups, char ** groups){
+  vector<string> groupStrings;
+  for (int i=0;i<nGroups;i++)  {
+     groupStrings.push_back(string(groups[i]));
+  }
+  return phiprof::initializeTimer(string(label),groupStrings);
+}
+
+extern "C" int phiprof_initializeTimerWithGroups1(char *label,char * group1 ){
+   return phiprof::initializeTimer(string(label), string(group1));
+}
+
+extern "C" int phiprof_initializeTimerWithGroups2(char *label,char * group1, char *group2){
+   
+   return phiprof::initializeTimer(string(label), string(group1), string(group2));
+}
+
+extern "C" int phiprof_initializeTimerWithGroups3(char *label,char * group1, char *group2, char *group3){
+   return phiprof::initializeTimer(string(label), string(group1), string(group2), string(group3));
+}
+
+
 
 extern "C" int phiprof_getChildId(char *label){
   return phiprof::getChildId(string(label));

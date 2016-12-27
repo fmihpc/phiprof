@@ -27,7 +27,14 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 
 int phiprof_initialize();
-int phiprof_initializeTimer(char *label,int nGroups, ... );
+
+int phiprof_initializeTimer(char *label);
+int phiprof_initializeTimerWithGroups(char *label, int nGroups, char **groups);
+int phiprof_initializeTimerWithGroups1(char *label, char *group1);
+int phiprof_initializeTimerWithGroups2(char *label, char *group1, char *group2);
+int phiprof_initializeTimerWithGroups3(char *label, char *group1, char *group2, char *group3);
+
+
 int phiprof_getChildId(char *label);
 
 int phiprof_start(char *label);

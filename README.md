@@ -1,7 +1,7 @@
 Phiprof – Parallel Hierarchical Profiler
 ====
 
-Copyright (c) 2011 - 2015 Finnish Meteorological Institute
+Copyright (c) 2011 - 2015 Finnish Meteorological Institute  
 Copyright (c) 2016   CSC - IT Center for Science
 
 Licence: LGPL 3
@@ -16,13 +16,12 @@ also be written, where the performance as a function of time may be
 reported.
 
 Features
-  * Supports C++ and C 
+  * Supports C++, C and Fortran 2008 
   * Low overhead (Less than 1 us)
   * Can print the total time as a human-readable hierarchical report
   * Automatically handles cases where groups of processes execute different codepaths
 
 Not supported
-  * No Fortran interface
   * Phiprof does not automatically add regions, these have to be added manually into the code.
 
 

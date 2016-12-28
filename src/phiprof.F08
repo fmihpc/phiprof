@@ -12,13 +12,48 @@ module phiprof
      end function phiprof_initialize_c
 
 
-     function phiprof_initializeTimer_c(label) bind(C,name='phiprof_initializeTimer') result(stat)
+     function phiprof_initializeTimer_c(label) bind(C,name='phiprof_initializeTimer') result(id)
        ! the C interface is int phiprof_initializeTimer(char *label)
        use, intrinsic :: ISO_C_BINDING
        implicit none
        character(kind=C_CHAR), intent(in) :: label(*)   
-       integer(kind=C_INT) :: stat
+       integer(kind=C_INT) :: id
      end function phiprof_initializeTimer_C
+     
+     function phiprof_initializeTimerWithGroups1_c(label, group1) &
+          bind(C,name='phiprof_initializeTimerWithGroups1') result(id)
+       ! the C interface is int phiprof_initializeTimer(char *label)
+       use, intrinsic :: ISO_C_BINDING
+       implicit none
+       character(kind=C_CHAR), intent(in) :: label(*)   
+       character(kind=C_CHAR), intent(in) :: group1(*)   
+       integer(kind=C_INT) :: id
+     end function phiprof_initializeTimerWithGroups1_c
+
+     function phiprof_initializeTimerWithGroups2_c(label, group1, group2) &
+          bind(C,name='phiprof_initializeTimerWithGroups2') result(id)
+       ! the C interface is int phiprof_initializeTimer(char *label)
+       use, intrinsic :: ISO_C_BINDING
+       implicit none
+       character(kind=C_CHAR), intent(in) :: label(*)   
+       character(kind=C_CHAR), intent(in) :: group1(*)   
+       character(kind=C_CHAR), intent(in) :: group2(*)   
+       integer(kind=C_INT) :: id
+     end function phiprof_initializeTimerWithGroups2_c
+
+     function phiprof_initializeTimerWithGroups3_c(label, group1, group2, group3) &
+          bind(C,name='phiprof_initializeTimerWithGroups3') result(id)
+       ! the C interface is int phiprof_initializeTimer(char *label)
+       use, intrinsic :: ISO_C_BINDING
+       implicit none
+       character(kind=C_CHAR), intent(in) :: label(*)   
+       character(kind=C_CHAR), intent(in) :: group1(*)   
+       character(kind=C_CHAR), intent(in) :: group2(*)   
+       character(kind=C_CHAR), intent(in) :: group3(*)   
+       integer(kind=C_INT) :: id
+     end function phiprof_initializeTimerWithGroups3_c
+
+
           
      function phiprof_getChildId_c(label) bind(C,name='phiprof_getChildId') result(id)
        ! the C interface is int phiprof_getId(char *label);
@@ -104,13 +139,37 @@ contains
     end if
   end subroutine phiprof_initialize
 
-  function phiprof_initializeTimer(label) result(id)
+  function phiprof_initializeTimer(label, group1, group2, group3) result(id)
     implicit none
     character(len=*), intent(in) :: label   
+    character(len=*), intent(in), optional :: group1  
+    character(len=*), intent(in), optional :: group2  
+    character(len=*), intent(in), optional :: group3  
     integer:: id
-    id  = phiprof_initializeTimer_c(trim(label)//C_NULL_CHAR)
+    
+    if (present(group1)) then
+       if (present(group2)) then
+          if (present(group3)) then
+             id  = phiprof_initializeTimerWithGroups3_c( &
+                  trim(label)//C_NULL_CHAR, &
+                  trim(group1)//C_NULL_CHAR, &
+                  trim(group2)//C_NULL_CHAR, &
+                  trim(group3)//C_NULL_CHAR)
+          else ! group3 not present
+             id  = phiprof_initializeTimerWithGroups2_c( &
+                  trim(label)//C_NULL_CHAR, &
+                  trim(group1)//C_NULL_CHAR, &
+                  trim(group2)//C_NULL_CHAR)         
+          end if
+       else ! group2 not present
+          id  = phiprof_initializeTimerWithGroups1_c( &
+                  trim(label)//C_NULL_CHAR, &
+                  trim(group1)//C_NULL_CHAR)          
+       end if
+    else ! group1 not present
+       id  = phiprof_initializeTimer_c(trim(label)//C_NULL_CHAR)
+    end if
   end function phiprof_initializeTimer
-  
 
   function phiprof_getChildId(label) result(id) 
     implicit none

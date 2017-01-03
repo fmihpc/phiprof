@@ -17,11 +17,11 @@ OUT_SHARED_NO = ../lib/libnophiprof.so
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -fpic -O3 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
+CCFLAGS = -fpic -O3 -qopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
 FFLAGS= -fpic -O3
 # compiler
-CCC = CC
-FTN = ftn
+CCC = mpicxx
+FTN = mpifort
 
 # compile flags
 LDFLAGS =  -lgomp -lstdc++ 
@@ -39,10 +39,10 @@ shared: $(OUT_SHARED)  $(OUT_SHARED_NO) phiprof.mod
 .cpp.o:
 	$(CCC) $(CCFLAGS) -c $< -o $@
 
-phiprof.mod: phiprof.F08 phiprof_fortran.o
+phiprof.mod: phiprof.f90 phiprof_fortran.o
 
-phiprof_fortran.o: phiprof.F08 
-	$(FTN) $(FFLAGS) -c phiprof.F08 -o phiprof_fortran.o
+phiprof_fortran.o: phiprof.f90 
+	$(FTN) $(FFLAGS) -c phiprof.f90 -o phiprof_fortran.o
 
 $(OUT_STATIC): $(OBJ) libdir includedir
 	ar rcs $(OUT_STATIC) $(OBJ)

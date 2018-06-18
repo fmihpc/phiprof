@@ -1,0 +1,6 @@
+FROM ubuntu:18.04
+COPY ./ ./phiprof
+RUN apt-get -y update
+RUN apt-get install -y gcc g++ gfortran make
+RUN apt-get install -y libopenmpi-dev 
+RUN apt-get install -y --force-yes wget git

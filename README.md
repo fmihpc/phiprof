@@ -7,7 +7,12 @@ Copyright (c) 2016   CSC - IT Center for Science
 Licence: LGPL 3
 
 Author: Sebastian von Alfthan (sebastian.von.alfthan at csc.fi)
+====
 
+Code status:
+
+
+====
 
 Phiprof a simple library that can be used to profile parallel MPI
 programs. It can be used to produce a hierarchical report of time

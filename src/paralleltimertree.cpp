@@ -425,19 +425,19 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
                table.addElement("Other", 1, stats.level[i]-1);
             }
 
-            if(nProcessesInPrint>1 && stats.countSum[i] != 0.0)
+            if(nProcessesInPrint>0)
                table.addElement(stats.countSum[i]/nProcessesInPrint);
             else
                table.addElement(0.0);
             
-            if(nProcessesInPrint>1 && stats.timeSum[i] != 0.0)
+            if(nProcessesInPrint>0)
                table.addElement(stats.timeSum[i]/nProcessesInPrint);
             else
                table.addElement(0.0);
             
             table.addElement(100.0 * stats.timeParentFraction[i]);
             
-            if(nProcessesInPrint>1 && stats.timeMax[i].val != 0.0) {
+            if(nProcessesInPrint>0 && stats.timeMax[i].val != 0.0) {
                double imbTime = stats.timeMax[i].val - stats.timeSum[i]/nProcessesInPrint;
                table.addElement(100 * imbTime / stats.timeMax[i].val  * ( nProcessesInPrint /(nProcessesInPrint - 1 )));
             }
@@ -445,7 +445,7 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
                table.addElement(0.0);
             }
 
-            if(nProcessesInPrint>1 && stats.threadsSum[i] != 0.0)
+            if(nProcessesInPrint>0)
                table.addElement(stats.threadsSum[i]/nProcessesInPrint);
             else
                table.addElement(0.0);
@@ -576,11 +576,11 @@ bool ParallelTimerTree::printTimersDetailed(double minFraction, const std::map<s
                table.addElement(""); // no groups
                table.addElement("Other", 1, stats.level[i]-1);
             }
-            if(nProcessesInPrint > 0 && stats.threadsSum[i] != 0.0)
+            if(nProcessesInPrint > 0)
                table.addElement(stats.threadsSum[i]/nProcessesInPrint);
             else
                table.addElement(0.0);
-            if(nProcessesInPrint > 0 && stats.timeSum[i] != 0.0)
+            if(nProcessesInPrint > 0)
                table.addElement(stats.timeSum[i]/nProcessesInPrint);
             else
                table.addElement(0.0);
@@ -589,7 +589,7 @@ bool ParallelTimerTree::printTimersDetailed(double minFraction, const std::map<s
             table.addElement(stats.timeMax[i].rank);
             table.addElement(stats.timeMin[i].val);
             table.addElement(stats.timeMin[i].rank);
-            if(nProcessesInPrint > 0 && stats.countSum[i] != 0.0)
+            if(nProcessesInPrint > 0)
                table.addElement(stats.countSum[i]/nProcessesInPrint);
             else
                table.addElement(0.0);

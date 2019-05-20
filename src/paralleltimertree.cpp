@@ -92,11 +92,11 @@ void ParallelTimerTree::collectGroupStats(){
       MPI_Reduce(&(timeRank[0]),&(groupStats.timeMax[0]),nGroups,MPI_DOUBLE_INT,MPI_MAXLOC,0,printComm);
       MPI_Reduce(&(timeRank[0]),&(groupStats.timeMin[0]),nGroups,MPI_DOUBLE_INT,MPI_MINLOC,0,printComm);
 
-      for(int i=0;i<nGroups;i++){
-         if(groupStats.timeSum[totalIndex]>0)
-            groupStats.timeTotalFraction[i]=groupStats.timeSum[i]/groupStats.timeSum[totalIndex];
-         else
-            groupStats.timeTotalFraction[i]=0.0;
+      for(int i = 0; i < nGroups; i++){
+         if(groupStats.timeSum[totalIndex] > 0)
+            groupStats.timeTotalFraction[i] = groupStats.timeSum[i] / groupStats.timeSum[totalIndex];
+         else 
+            groupStats.timeTotalFraction[i] = 0.0;
       }
    }
    else{
@@ -425,19 +425,20 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
                table.addElement("Other", 1, stats.level[i]-1);
             }
 
+	    
             if(nProcessesInPrint>0)
-               table.addElement(stats.countSum[i]/nProcessesInPrint);
+               table.addElement(stats.countSum[i] / nProcessesInPrint);
             else
                table.addElement(0.0);
             
             if(nProcessesInPrint>0)
-               table.addElement(stats.timeSum[i]/nProcessesInPrint);
+               table.addElement(stats.timeSum[i] / nProcessesInPrint);
             else
                table.addElement(0.0);
             
             table.addElement(100.0 * stats.timeParentFraction[i]);
             
-            if(nProcessesInPrint>0 && stats.timeMax[i].val != 0.0) {
+            if(nProcessesInPrint > 1 && stats.timeMax[i].val != 0.0) {
                double imbTime = stats.timeMax[i].val - stats.timeSum[i]/nProcessesInPrint;
                table.addElement(100 * imbTime / stats.timeMax[i].val  * ( nProcessesInPrint /(nProcessesInPrint - 1 )));
             }

@@ -1,0 +1,10 @@
+sudo: required
+language: c++
+services:
+  - docker
+before_install:
+  - docker build -t galfthan/bionic -f ci/Dockerfile-build .
+  - docker ps -a
+script:
+  - docker run galfthan/bionic /bin/sh -c "ls -la; cd phiprof/src; make "
+  

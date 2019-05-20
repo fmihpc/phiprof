@@ -166,7 +166,10 @@ public:
          }
       }
       //TODO, should return double
-      return sumCount / timedThreads;
+      if (timedThreads > 0)
+         return sumCount / timedThreads;
+      else
+         return 0;
    }
 
    double getAverageWorkUnits() const{
@@ -178,7 +181,10 @@ public:
             sumWorkUnits += workUnits[i];
          }
       }
-      return sumWorkUnits / timedThreads;
+      if (timedThreads > 0)
+         return sumWorkUnits / timedThreads;
+      else
+         return 0;
    }
 
 

@@ -47,7 +47,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
       
       
 void ParallelTimerTree::collectGroupStats(){
-   int rank, nProcesses;
+   int rank = 0, nProcesses = 0;
    //per process info. updated in collectStats
    std::vector<double> time;
    std::vector<doubleRankPair> timeRank;

@@ -199,6 +199,7 @@ protected:
       numThreads = 1;
       thread = 0;
 #endif
+      return numThreads;
 }
 
    void setCurrentId(int newId);

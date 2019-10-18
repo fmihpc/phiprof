@@ -28,22 +28,22 @@ namespace phiprof
 {
    bool initialize(){return true;}
 
-   bool start(int id){return true;}
-   bool start(const string &label){return true;}
+   bool start([[maybe_unused]] int id){return true;}
+   bool start([[maybe_unused]] const string &label){return true;}
 
-   bool stop (int id) {return true;}
-   bool stop (int id,double workUnits, const string &workUnitLabel){return true;}
-   bool stop (const string &label,double workUnits, const string &workUnitLabel){return true;}
+   bool stop ([[maybe_unused]] int id) {return true;}
+   bool stop ([[maybe_unused]] int id, [[maybe_unused]] double workUnits, [[maybe_unused]] const string &workUnitLabel){return true;}
+   bool stop ([[maybe_unused]] const string &label, [[maybe_unused]] double workUnits, [[maybe_unused]] const string &workUnitLabel){return true;}
 
-   int getChildId(const std::string &label) {return 0;}
+   int getChildId([[maybe_unused]] const std::string &label) {return 0;}
 
-   int initializeTimer(const string &label,const vector<string> &groups) { return 0;}
-   int initializeTimer(const string &label){return 0;}
-   int initializeTimer(const string &label,const string &group1){return 0;}
-   int initializeTimer(const string &label,const string &group1,const string &group2){return 0;}
-   int initializeTimer(const string &label,const string &group1,const string &group2,const string &group3){return 0;}
+   int initializeTimer([[maybe_unused]] const string &label, [[maybe_unused]] const vector<string> &groups) { return 0;}
+   int initializeTimer([[maybe_unused]] const string &label){return 0;}
+   int initializeTimer([[maybe_unused]] const string &label, [[maybe_unused]] const string &group1){return 0;}
+   int initializeTimer([[maybe_unused]] const string &label, [[maybe_unused]] const string &group1, [[maybe_unused]] const string &group2){return 0;}
+   int initializeTimer([[maybe_unused]] const string &label, [[maybe_unused]] const string &group1, [[maybe_unused]] const string &group2, [[maybe_unused]]const string &group3){return 0;}
 
-   bool print(MPI_Comm comm,std::string fileNamePrefix){return true;}
+   bool print([[maybe_unused]] MPI_Comm comm, [[maybe_unused]] std::string fileNamePrefix){return true;}
    
 
 }

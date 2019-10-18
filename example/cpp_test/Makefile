@@ -9,7 +9,7 @@ INCLUDES =
 CCFLAGS = -O3 -I../../include  -fopenmp
 LDFLAGS = -L../../lib -lphiprof  -lgomp -ldl -lrt
 # compiler
-CCC = mpiCC
+CCC = mpic++
 
 
 .SUFFIXES: .cpp

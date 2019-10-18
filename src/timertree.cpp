@@ -124,7 +124,6 @@ bool TimerTree::start(const std::string &label){
 //stop a timer defined by id
 bool TimerTree::stop (int id,
                       double workUnits){
-   bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId[thread] ){
       std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;
@@ -139,7 +138,6 @@ bool TimerTree::stop (int id,
 bool TimerTree::stop (int id,
                       double workUnits,
                       const std::string &workUnitLabel){
-   bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId[thread] ){
       std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;
@@ -152,7 +150,7 @@ bool TimerTree::stop (int id,
 }
 
 
-bool TimerTree::stop (const std::string &label)
+bool TimerTree::stop ([[maybe_unused]] const std::string &label)
 {
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(label != timers[currentId[thread]].getLabel()){
@@ -166,8 +164,8 @@ bool TimerTree::stop (const std::string &label)
 }
 
 
-//stop with workunits
-bool TimerTree::stop (const std::string &label,
+//stop with workunits. label is only used when debugging is enabled
+bool TimerTree::stop ([[maybe_unused]] const std::string &label,
                       const double workUnits,
                       const std::string &workUnitLabel){
 #ifdef DEBUG_PHIPROF_TIMERS         

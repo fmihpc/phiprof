@@ -102,7 +102,7 @@ private:
    };
    GroupStatistics groupStats;
 
-   void collectGroupStats();
+   void collectGroupStats(int reportRank);
    void getGroupIds(std::map<std::string, std::string>  &groupIds);
    void collectTimerStats(int reportRank,int id=0,int parentIndex=0);
 

@@ -35,7 +35,7 @@ void PrettyPrintTable::addTitle(std::string const& newTitle){
 void PrettyPrintTable::addElement(std::string const& element, uint span, uint indentLevel ){
    std::stringstream buffer;
    buffer << std::left;
-   for(int i = 0; i < _indentWidth * indentLevel; i++)
+   for(uint i = 0; i < _indentWidth * indentLevel; i++)
       buffer << " ";
    buffer << element;
    if(table.size() == 0) {
@@ -95,7 +95,7 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
    columnWidths.resize(nColumns);
    for(auto &row: table){
       uint countedColumns = 0;
-      for(int j = 0; j <  row.size(); j++){
+      for(uint j = 0; j <  row.size(); j++){
          uint span = row[j].second;
          uint requiredWidth = row[j].first.length(); //how much space
                                                      //we need for cell
@@ -110,7 +110,7 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
    //for all columns if needed
    for(auto &row: table){
       uint countedColumns = 0;
-      for(int j = 0; j <  row.size(); j++){
+      for(uint j = 0; j <  row.size(); j++){
          uint span = row[j].second;
          if(span > 1) {
             uint requiredWidth = row[j].first.length(); //how much
@@ -167,7 +167,7 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
       else{
          output << delimeter;
          uint printedColumns = 0;
-         for(int j = 0; j < row.size(); j++){
+         for(uint j = 0; j < row.size(); j++){
             uint span = row[j].second;
             uint width = 0;
             for(uint col = printedColumns; col < printedColumns + span; col++) {
@@ -189,7 +189,7 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
             printedColumns += span;
          }
 
-         for(int j = printedColumns; j < nColumns; j++){
+         for(uint j = printedColumns; j < nColumns; j++){
             output << std::setw( columnWidths[j] ) << "";
             output << delimeter;
          }

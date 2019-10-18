@@ -17,8 +17,8 @@ OUT_SHARED_NO = ../lib/libnophiprof.so
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -fpic -O3 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
-FFLAGS= -fpic -O3
+CCFLAGS = -fpic -O2 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) -W -Wall -Wextra -pedantic -Wno-unused-parameter
+FFLAGS= -fpic -O2
 # compiler
 CCC = mpic++
 FTN = mpifort

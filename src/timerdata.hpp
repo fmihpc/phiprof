@@ -119,7 +119,7 @@ public:
       double sum = 0;
       nThreads = 0;
       
-      for(int i = 0; i < time.size(); i++){
+      for(uint i = 0; i < time.size(); i++){
          if(count[i] > 0 || active[i]) {
             nThreads++;
             double timerTime = time[i] + (active[i] ? wTime()- startTime[i] : 0.0);
@@ -159,7 +159,7 @@ public:
    int64_t getAverageCount() const {
       int64_t sumCount = 0.0;
       int timedThreads = 0;
-      for(int i = 0; i < time.size(); i++){
+      for(uint i = 0; i < time.size(); i++){
          if(count[i] > 0 || active[i]) {
             timedThreads++;
             sumCount += count[i];
@@ -175,7 +175,7 @@ public:
    double getAverageWorkUnits() const{
       double sumWorkUnits = 0.0;
       int timedThreads = 0;
-      for(int i = 0; i < time.size(); i++){
+      for(uint i = 0; i < time.size(); i++){
          if(count[i] > 0 || active[i]) {
             timedThreads++;
             sumWorkUnits += workUnits[i];
@@ -190,7 +190,7 @@ public:
 
    double getThreads() const {
       int timedThreads = 0;
-      for(int i = 0; i < time.size(); i++){
+      for(uint i = 0; i < time.size(); i++){
          if(count[i] > 0 || active[i]) {
             timedThreads++;
          }
@@ -216,7 +216,7 @@ public:
       time.assign(time.size(), 0.0);
       workUnits.assign(workUnits.size(), 0.0 );
       
-      for(int thread = 0; thread < active.size(); thread++) {
+      for(uint thread = 0; thread < active.size(); thread++) {
          if(active[thread]){
             startTime[thread] = resetWallTime;
          }
@@ -224,7 +224,7 @@ public:
    }
    
    void shiftActiveStartTime(double shiftTime){
-      for(int thread = 0; thread < active.size(); thread++) {
+      for(uint thread = 0; thread < active.size(); thread++) {
          if(active[thread]){
             startTime[thread] += shiftTime;
          }

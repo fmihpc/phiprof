@@ -56,7 +56,7 @@ public:
    }
 
 
-   static int setThreadCounts(){
+   static void setThreadCounts(){
 #ifdef _OPENMP
 #pragma omp single
       numThreads = omp_get_max_threads();

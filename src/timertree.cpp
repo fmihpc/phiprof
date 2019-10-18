@@ -124,7 +124,6 @@ bool TimerTree::start(const std::string &label){
 //stop a timer defined by id
 bool TimerTree::stop (int id,
                       double workUnits){
-   bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId[thread] ){
       std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;
@@ -139,7 +138,6 @@ bool TimerTree::stop (int id,
 bool TimerTree::stop (int id,
                       double workUnits,
                       const std::string &workUnitLabel){
-   bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(id != currentId[thread] ){
       std::cerr << "PHIPROF-ERROR: id missmatch in profile::stop Stopping "<< id <<" at level " << timers[currentId[thread]].getLevel() << std::endl;

@@ -249,9 +249,10 @@ private:
    int level;  //what hierarchy level
    int parentId;  //key of parent (id)
    std::vector<int> childIds; //children of this timer
+   const std::vector<std::string> groups; // What user-defined groups does this timer belong to, e.g., "MPI", "IO", etc..
    std::string workUnitLabel;   //unit for the counter workUnitCount
                                 //(can be changed in stop)
-   const std::vector<std::string> groups; // What user-defined groups does this timer belong to, e.g., "MPI", "IO", etc..
+
    std::vector<int64_t> count; //how many times have this been accumulated per thread
    std::vector<double> time; // total time accumulated per thread
    std::vector<double> startTime; //Starting time of previous start() call per thread

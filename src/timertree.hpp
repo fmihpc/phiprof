@@ -57,7 +57,6 @@ public:
    */
    //start timer, with id
    bool start(int id){   
-      bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
       if(id > timers.size() ) {
 #pragma omp critical

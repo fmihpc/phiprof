@@ -160,7 +160,7 @@ void PrettyPrintTable::print(std::ofstream& output, std::string const& delimeter
       
       if(row.size() == 1 && row[0].first=="---"){
          output << std::setw(1);
-         for (int j = 0; j < totWidth; j++) {
+         for (uint j = 0; j < totWidth; j++) {
             output << "-";
          }
       }

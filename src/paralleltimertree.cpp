@@ -347,8 +347,6 @@ bool ParallelTimerTree::printGroupStatistics(double minFraction,
 //print out global timers
 //If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
 bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
-   int rank,nProcesses;
-
    if(rankInPrint==0){
       PrettyPrintTable table;
       //print Title
@@ -496,9 +494,6 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
 //print out global timers
 //If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
 bool ParallelTimerTree::printTimersDetailed(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
-   int rank,nProcesses;
-
-
    if(rankInPrint==0){
       PrettyPrintTable table;
 

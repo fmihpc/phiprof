@@ -1,8 +1,10 @@
 # source files.
 SRC = prettyprinttable.cpp timerdata.cpp timertree.cpp paralleltimertree.cpp  phiprof.cpp phiprof_c.cpp 
 SRC_NO = nophiprof.cpp phiprof_c.cpp
-OBJ = $(SRC:.cpp=.o) phiprof_fortran.o
-OBJ_NO = $(SRC_NO:.cpp=.o) phiprof_fortran.o
+OBJ = $(SRC:.cpp=.o) 
+FOBJ = phiprof_fortran.o
+OBJ_NO = $(SRC_NO:.cpp=.o) 
+FOBJ_NO = phiprof_fortran.o
 OUT_STATIC = ../lib/libphiprof.a
 OUT_STATIC_NO = ../lib/libnophiprof.a
 OUT_SHARED = ../lib/libphiprof.so
@@ -33,22 +35,22 @@ default: all
 
 all: $(OUT_STATIC) $(OUT_STATIC_NO) $(OUT_SHARED)  $(OUT_SHARED_NO) includedir
 
-all-w-fortran:  $(OUT_STATIC) $(OUT_STATIC_NO) $(OUT_SHARED)  $(OUT_SHARED_NO)  includedir-w-fortran
+all-w-fortran:  $(OUT_STATIC) $(OUT_STATIC_NO) $(OUT_SHARED)  $(OUT_SHARED_NO)  includedir-w-fortran fortran
 
 
 static:  $(OUT_STATIC) $(OUT_STATIC_NO) includedir
 
 shared: $(OUT_SHARED)  $(OUT_SHARED_NO) includedir
 
-static-w-fortran:  $(OUT_STATIC) $(OUT_STATIC_NO)  includedir-w-fortran
+static-w-fortran:  $(OUT_STATIC) $(OUT_STATIC_NO)  includedir-w-fortran fortran
 
-shared-w-fortran: $(OUT_SHARED)  $(OUT_SHARED_NO)  includedir-w-fortran
+shared-w-fortran: $(OUT_SHARED)  $(OUT_SHARED_NO)  includedir-w-fortra fortran
 
 
 .cpp.o:
 	$(CCC) $(CCFLAGS) -c $< -o $@
 
-phiprof.mod: phiprof.f90 phiprof_fortran.o
+phiprof.mod: phiprof.f90 phiprof_fortran.o 
 
 phiprof_fortran.o: phiprof.f90 
 	$(FTN) $(FFLAGS) -c phiprof.f90 -o phiprof_fortran.o
@@ -69,9 +71,10 @@ $(OUT_SHARED_NO): $(OBJ_NO) libdir
 libdir:
 	mkdir -p ../lib
 
-includedir-w-fortran: phiprof.mod
-	mkdir -p ../include
-	cp phiprof.hpp phiprof.h phiprof.mod ../include
+fortran: includedir-w-fortran  phiprof.mod $(FOBJ) $(FOBJ_NO)
+
+includedir-w-fortran: includedir
+	cp  phiprof.mod ../include
 
 includedir: 
 	mkdir -p ../include
@@ -80,7 +83,7 @@ includedir:
 
 
 clean:
-	rm -f $(OBJ) *.mod $(OUT_STATIC) $(OBJ_NO) $(OUT_STATIC_NO) $(OUT_SHARED) $(OUT_SHARED_NO)
+	rm -f $(OBJ) $(FOBJ) *.mod $(OUT_STATIC) $(OBJ_NO) $(FOBJ_NO) $(OUT_STATIC_NO) $(OUT_SHARED) $(OUT_SHARED_NO) ../include/* 
 
 phiprof.o: phiprof.hpp
 

@@ -17,10 +17,10 @@ OUT_SHARED_NO = ../lib/libnophiprof.so
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -fpic -O3 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
-FFLAGS= -fpic -O3
+CCFLAGS = -fpic -O2 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
+FFLAGS= -fpic -O2 
 # compiler
-CCC = mpic++
+CCC = mpicxx
 FTN = mpifort
 
 # compile flags
@@ -29,11 +29,20 @@ LDFLAGS =  -lgomp -lstdc++
 .SUFFIXES: .cpp
 
 
-default: $(OUT_STATIC) $(OUT_STATIC_NO) $(OUT_SHARED)  $(OUT_SHARED_NO) phiprof.mod
+default: all
 
-static:  $(OUT_STATIC) $(OUT_STATIC_NO) phiprof.mod
+all: $(OUT_STATIC) $(OUT_STATIC_NO) $(OUT_SHARED)  $(OUT_SHARED_NO) includedir
 
-shared: $(OUT_SHARED)  $(OUT_SHARED_NO) phiprof.mod
+all-w-fortran:  $(OUT_STATIC) $(OUT_STATIC_NO) $(OUT_SHARED)  $(OUT_SHARED_NO)  includedir-w-fortran
+
+
+static:  $(OUT_STATIC) $(OUT_STATIC_NO) includedir
+
+shared: $(OUT_SHARED)  $(OUT_SHARED_NO) includedir
+
+static-w-fortran:  $(OUT_STATIC) $(OUT_STATIC_NO)  includedir-w-fortran
+
+shared-w-fortran: $(OUT_SHARED)  $(OUT_SHARED_NO)  includedir-w-fortran
 
 
 .cpp.o:
@@ -44,10 +53,10 @@ phiprof.mod: phiprof.f90 phiprof_fortran.o
 phiprof_fortran.o: phiprof.f90 
 	$(FTN) $(FFLAGS) -c phiprof.f90 -o phiprof_fortran.o
 
-$(OUT_STATIC): $(OBJ) libdir includedir
+$(OUT_STATIC): $(OBJ) libdir
 	ar rcs $(OUT_STATIC) $(OBJ)
 
-$(OUT_STATIC_NO): $(OBJ_NO) libdir includedir
+$(OUT_STATIC_NO): $(OBJ_NO) libdir 
 	ar rcs $(OUT_STATIC_NO) $(OBJ_NO)
 
 
@@ -60,9 +69,13 @@ $(OUT_SHARED_NO): $(OBJ_NO) libdir
 libdir:
 	mkdir -p ../lib
 
-includedir: phiprof.mod
+includedir-w-fortran: phiprof.mod
 	mkdir -p ../include
 	cp phiprof.hpp phiprof.h phiprof.mod ../include
+
+includedir: 
+	mkdir -p ../include
+	cp phiprof.hpp phiprof.h  ../include
 
 
 

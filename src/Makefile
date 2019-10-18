@@ -17,7 +17,7 @@ OUT_SHARED_NO = ../lib/libnophiprof.so
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -fpic -O2 -fopenmp -std=c++11 -DCLOCK_ID=$(CLOCK_ID) -W -Wall -Wextra -pedantic 
+CCFLAGS = -fpic -O2 -fopenmp -std=c++17 -DCLOCK_ID=$(CLOCK_ID) -W -Wall -Wextra -pedantic 
 FFLAGS= -fpic -O2
 # compiler
 CCC = mpic++

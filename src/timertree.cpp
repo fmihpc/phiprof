@@ -150,7 +150,7 @@ bool TimerTree::stop (int id,
 }
 
 
-bool TimerTree::stop (const std::string &label)
+bool TimerTree::stop ([[maybe_unused]] const std::string &label)
 {
 #ifdef DEBUG_PHIPROF_TIMERS         
    if(label != timers[currentId[thread]].getLabel()){
@@ -164,8 +164,8 @@ bool TimerTree::stop (const std::string &label)
 }
 
 
-//stop with workunits
-bool TimerTree::stop (const std::string &label,
+//stop with workunits. label is only used when debugging is enabled
+bool TimerTree::stop ([[maybe_unused]] const std::string &label,
                       const double workUnits,
                       const std::string &workUnitLabel){
 #ifdef DEBUG_PHIPROF_TIMERS         

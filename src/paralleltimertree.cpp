@@ -45,16 +45,16 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 ////-------------------------------------------------------------------------            
      
       
-      
-void ParallelTimerTree::collectGroupStats(){
-   int rank, nProcesses;
+// reportRank is the rank to be used in the report, not the rank in the printComm communicator      
+void ParallelTimerTree::collectGroupStats(int reportRank){
    //per process info. updated in collectStats
    std::vector<double> time;
    std::vector<doubleRankPair> timeRank;
    std::map<std::string,std::vector<int> > groups;
    doubleRankPair in;
    int totalIndex=0; //where we store the group for total time (called Total, in timer id=0)
-   
+
+
    //construct std::map from groups to timers in group 
    for(unsigned int id=0;id < size();id++){
       for(auto &group: (*this)[id].getGroups() ){
@@ -76,7 +76,7 @@ void ParallelTimerTree::collectGroupStats(){
       groupStats.name.push_back(group->first);
       time.push_back(groupTime);
       in.val=groupTime;
-      in.rank=rank;
+      in.rank=reportRank;
       timeRank.push_back(in);
    }
 
@@ -347,8 +347,6 @@ bool ParallelTimerTree::printGroupStatistics(double minFraction,
 //print out global timers
 //If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
 bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
-   int rank,nProcesses;
-
    if(rankInPrint==0){
       PrettyPrintTable table;
       //print Title
@@ -496,9 +494,6 @@ bool ParallelTimerTree::printTimers(double minFraction, const std::map<std::stri
 //print out global timers
 //If any labels differ, then this print will deadlock. Only call it with a communicator that is guaranteed to be consistent on all processes.
 bool ParallelTimerTree::printTimersDetailed(double minFraction, const std::map<std::string, std::string>& groupIds, std::ofstream &output){
-   int rank,nProcesses;
-
-
    if(rankInPrint==0){
       PrettyPrintTable table;
 
@@ -696,7 +691,7 @@ bool ParallelTimerTree::print(MPI_Comm communicator, std::string fileNamePrefix)
       std::stringstream fname;
       fname << fileNamePrefix << "_" << printIndex << ".txt";
       collectTimerStats(rank);
-      collectGroupStats();
+      collectGroupStats(rank);
       
       if(rankInPrint == 0){
          char *envVariable;

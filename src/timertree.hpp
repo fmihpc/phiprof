@@ -61,7 +61,6 @@ public:
    */
    //start timer, with id
    bool start(int id){   
-      bool success=true;
 #ifdef DEBUG_PHIPROF_TIMERS         
       if(id > timers.size() ) {
 #pragma omp critical
@@ -198,7 +197,7 @@ protected:
    std::string getHashString(int id) const;
    
 
-   static int setThreadCounts(){
+   static void setThreadCounts(){
 #ifdef _OPENMP
 #pragma omp single
       numThreads = omp_get_max_threads();

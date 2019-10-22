@@ -24,14 +24,14 @@ CCC = mpic++
 FTN = mpifort
 
 # Optional flag to add NVTX profiling
-#CCFLAGS += -D_NVTX
+CCFLAGS += -D_NVTX
 
 # compile flags
 LDFLAGS = -lstdc++ 
 
 # Add OpenMP support
-CCFLAGS += -fopenmp 
-LDFLAGS += -lgomp
+CCFLAGS += -mp #-fopenmp
+LDFLAGS += -mp -lgomp
 
 .SUFFIXES: .cpp
 

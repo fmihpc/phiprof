@@ -10,7 +10,12 @@ OUT_STATIC_NO = ../lib/libnophiprof.a
 OUT_SHARED = ../lib/libphiprof.so
 OUT_SHARED_NO = ../lib/libnophiprof.so
 
+# Set the default compiler type (pgi, gcc, intel). Can be overriden from command-line.
+CC = gcc
 
+# compiler calls
+CCC = mpicxx
+FTN = mpifort
 
 #Set clock.
 #CLOCK_MONOTONIC_COARSE is (much) faster, but has very poor
@@ -19,26 +24,22 @@ OUT_SHARED_NO = ../lib/libnophiprof.so
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -fpic -O2 -std=c++17 -DCLOCK_ID=$(CLOCK_ID) #-W -Wall -Wextra -pedantic 
+CCFLAGS = -fpic -O2 -std=c++17 -DCLOCK_ID=$(CLOCK_ID)
 FFLAGS= -fpic -O2
-
-# compiler (GCC)
-CCC = mpicxx
-FTN = mpifort
-
-# Optional flag to add NVTX profiling
-CCFLAGS += -D_NVTX
-
-# compile flags
 LDFLAGS = -lstdc++ 
 
-# Add GCC OpenMP support
-#CCFLAGS += -fopenmp
-#LDFLAGS += -lgomp
-
-# Add PGI OpenMP support
-CCFLAGS += -mp
-LDFLAGS += -mp
+# Compiler-specific options
+ifeq ($(CC),pgi)
+   # Add openmp, NVTX profiling, warnings
+   CCFLAGS += -mp -D_NVTX --remarks -Minform=inform # -a --pedantic give even more warnings
+   LDFLAGS += -mp
+else ifeq ($(CC),gcc)
+   CCFLAGS += -fopenmp -W -Wall -Wextra -pedantic 
+   LDFLAGS += -lgomp
+else ifeq ($(CC),intel)
+   CCFLAGS += -qopenmp -W -Wall -Wextra -pedantic 
+   LDFLAGS += -qopenmp
+endif
 
 .SUFFIXES: .cpp
 

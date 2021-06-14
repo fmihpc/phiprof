@@ -27,6 +27,10 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include <omp.h>
 #endif
 
+#ifdef _NVTX
+#include "nvToolsExt.h"
+#endif
+
 class TimerTree {
 public:
    /**
@@ -77,6 +81,11 @@ public:
       //start timer (currentId = id)
       int newId = timers[id].start();
       setCurrentId(newId);
+
+#ifdef _NVTX
+      nvtxRangePush(timers[id].getLabel().c_str());
+#endif
+
       return true;
    }
 
@@ -132,8 +141,14 @@ public:
          return false;
       }
 #endif            
+
+#ifdef _NVTX
+      nvtxRangePop();
+#endif
+
       int newId = timers[id].stop();
       setCurrentId(newId);
+
       return true;
    }
    
@@ -208,9 +223,7 @@ protected:
 
    std::vector<int> currentId;
    std::vector<TimerData> timers;
-   
 
-   
 };
 
 

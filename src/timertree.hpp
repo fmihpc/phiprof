@@ -27,6 +27,10 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include <omp.h>
 #endif
 
+#ifdef TAU_UNIFY
+#include "TAU.h"
+#endif
+
 class TimerTree {
 public:
    /**
@@ -77,6 +81,11 @@ public:
       //start timer (currentId = id)
       int newId = timers[id].start();
       setCurrentId(newId);
+
+#ifdef TAU_UNIFY
+      TAU_START(timers[id].getLabel().c_str());
+#endif
+
       return true;
    }
 
@@ -132,6 +141,11 @@ public:
          return false;
       }
 #endif            
+
+#ifdef TAU_UNIFY
+      TAU_STOP(timers[id].getLabel().c_str());
+#endif
+
       int newId = timers[id].stop();
       setCurrentId(newId);
       return true;

@@ -11,6 +11,11 @@ OUT_SHARED = ../lib/libphiprof.so
 OUT_SHARED_NO = ../lib/libnophiprof.so
 
 
+# compiler calls
+#CCC = mpicxx
+#FTN = mpifort
+CCC = tau_cxx.sh
+FTN = tau_f90.sh
 
 #Set clock.
 #CLOCK_MONOTONIC_COARSE is (much) faster, but has very poor
@@ -19,7 +24,8 @@ OUT_SHARED_NO = ../lib/libnophiprof.so
 CLOCK_ID = CLOCK_MONOTONIC
 
 # C++ compiler flags 
-CCFLAGS = -fpic -O2 -fopenmp -std=c++17 -DCLOCK_ID=$(CLOCK_ID) -W -Wall -Wextra -pedantic 
+<<<<<<< HEAD
+CCFLAGS = -march=native -fpic -O3 -fopenmp -std=c++17 -DCLOCK_ID=$(CLOCK_ID) #-DDEBUG_PHIPROF_TIMERS # -W -Wall -Wextra -pedantic 
 FFLAGS= -fpic -O2
 
 # compiler
@@ -28,6 +34,8 @@ FTN = mpifort
 
 # compile flags
 LDFLAGS =  -lgomp -lstdc++ 
+
+# compile flags
 
 .SUFFIXES: .cpp
 

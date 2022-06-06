@@ -1,3 +1,4 @@
+
 # source files.
 SRC = prettyprinttable.cpp timerdata.cpp timertree.cpp paralleltimertree.cpp  phiprof.cpp phiprof_c.cpp 
 SRC_NO = nophiprof.cpp phiprof_c.cpp
@@ -10,8 +11,8 @@ OUT_STATIC_NO = ../lib/libnophiprof.a
 OUT_SHARED = ../lib/libphiprof.so
 OUT_SHARED_NO = ../lib/libnophiprof.so
 
-# Set the default compiler type (pgi, gcc, intel, clang). Can be overriden from command-line.
-CC = gcc
+# Set the default compiler type (pgi, nvcc, gcc, intel, clang). Can be overriden from command-line.
+CC = nvcc
 
 # compiler calls
 CCC = mpicxx
@@ -36,6 +37,11 @@ ifeq ($(CC),pgi)
    # Add openmp, NVTX profiling, warnings
    CCFLAGS += -mp -D_NVTX --remarks -Minform=inform # -a --pedantic give even more warnings
    LDFLAGS += -mp
+else ifeq ($(CC),nvcc)
+   # needs extra --compiler-options
+   CCFLAGS = --compiler-options -fpic -O2 -std=c++17 -DCLOCK_ID=$(CLOCK_ID)
+   CCFLAGS +=  -D_NVTX -Xcompiler -fopenmp
+   LDFLAGS += -lgomp -lnvToolsExt
 else ifeq ($(CC),gcc)
    CCFLAGS += -fopenmp -W -Wall -Wextra -pedantic 
    LDFLAGS += -lgomp

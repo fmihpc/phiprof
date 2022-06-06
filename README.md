@@ -32,7 +32,7 @@ Not supported
 2) Edit Makefile if needed to set the correct compilation options and
 compiler names. Phiprof should be compiled with a MPI compiler and
 openmp threading should be enabled. The compiler environment can also be
-set from the command line, for example "make CC=pgi".
+set from the command line, for example "make CC=nvcc CCC=nvcc".
 
 3) make 
 

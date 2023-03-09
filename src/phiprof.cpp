@@ -150,7 +150,7 @@ namespace phiprof
    }
 
    bool Timer::start() {
-      return active = phiprof::start(this->id);
+      return active ? false : active = phiprof::start(this->id);
    }
 
    bool Timer::stop(const double workUnits, const std::string& workUnitLabel) {
@@ -162,7 +162,3 @@ namespace phiprof
    }
    
 }
-
-
-   
-   

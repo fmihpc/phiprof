@@ -179,7 +179,7 @@ namespace phiprof
          Timer(const Timer&) = delete;
          Timer& operator=(const Timer&) = delete;
          Timer(Timer&&) = default;
-         Timer& operator=(Timer&&) = default;
+         Timer& operator=(Timer&&) = delete;
 
          bool start();
          bool stop(const double workUnits = -1.0, const std::string& workUnitLabel = "");

@@ -130,7 +130,6 @@ namespace phiprof
    }
 
    Timer::Timer(const string& label, const vector<string>& groups) : Timer(initializeTimer(label, groups)) {}
-   Timer::Timer(const string& label, const string& group) : Timer(label, vector<string> {group}) {}
 
    Timer::~Timer() {
       this->stop();

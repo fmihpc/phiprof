@@ -171,7 +171,6 @@ namespace phiprof
       public:
          explicit Timer(const int id);
          Timer(const std::string& label, const std::vector<std::string>& groups = {});
-         Timer(const std::string& label, const std::string& group);
 
          ~Timer();
          // Rule of five

@@ -186,8 +186,8 @@ namespace phiprof
       private:
          explicit Timer(const int id);
 
+         const int id;
          bool active {false};
-         int id {};
    };
 
 }

@@ -169,10 +169,9 @@ namespace phiprof
 
    class Timer {
       public:
-         static Timer start(const std::string& label, const std::vector<std::string>& groups = {});
-         static Timer start(const std::string& label, const std::string& group);
-         static Timer initialize(const std::string& label, const std::vector<std::string>& groups = {});
-         static Timer initialize(const std::string& label, const std::string& group);
+         explicit Timer(const int id);
+         Timer(const std::string& label, const std::vector<std::string>& groups = {});
+         Timer(const std::string& label, const std::string& group);
 
          ~Timer();
          // Rule of five
@@ -184,8 +183,6 @@ namespace phiprof
          bool start();
          bool stop(const double workUnits = -1.0, const std::string& workUnitLabel = "");
       private:
-         explicit Timer(const int id);
-
          const int id;
          bool active {false};
    };

@@ -125,25 +125,12 @@ namespace phiprof
       return parallelTimerTree.getChildId(label);
    }
 
-   Timer Timer::initialize(const std::string& label, const std::vector<std::string>& groups) {
-      return Timer(initializeTimer(label, groups));
+   Timer::Timer(const int id) : id {id} {
+      this->start();
    }
 
-   Timer Timer::initialize(const std::string& label, const std::string& group) {
-      return initialize(label, {group});
-   }
-
-   Timer Timer::start(const std::string& label, const std::vector<std::string>& groups) {
-      Timer t {initialize(label, groups)};
-      t.start();
-      return t;
-   }
-
-   Timer Timer::start(const std::string& label, const std::string& group) {
-      return start(label, {group});
-   }
-
-   Timer::Timer(const int id) : id {id} {}
+   Timer::Timer(const string& label, const vector<string>& groups) : Timer(initializeTimer(label, groups)) {}
+   Timer::Timer(const string& label, const string& group) : Timer(label, vector<string> {group}) {}
 
    Timer::~Timer() {
       this->stop();
@@ -153,7 +140,7 @@ namespace phiprof
       return active ? false : (active = phiprof::start(this->id));
    }
 
-   bool Timer::stop(const double workUnits, const std::string& workUnitLabel) {
+   bool Timer::stop(const double workUnits, const string& workUnitLabel) {
       if (!active)
          return false;
 

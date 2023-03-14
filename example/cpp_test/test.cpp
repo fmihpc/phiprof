@@ -60,93 +60,84 @@ int main(int argc,char **argv){
    
    phiprof::initialize();
    
-   phiprof::start("Benchmarking phiprof"); 
+   phiprof::Timer benchmark {"Benchmarking phiprof"}; 
 
-   phiprof::start("Initalized timers using ID");
+   phiprof::Timer init {"Initalized timers using ID"};
 
    if(rank==0)
       cout << "  1/3" <<endl;
-   int id_a=phiprof::initializeTimer("a","A with ID");
+   int id_a = phiprof::initializeTimer("a","A with ID");
    for(int i=0;i<nIterations;i++){
-      phiprof::start(id_a);
-      phiprof::stop(id_a);
+      phiprof::Timer a {id_a};
    }
-   phiprof::stop("Initalized timers using ID",nIterations,"start-stop");
+   init.stop(nIterations, "start-stop");
 
    if(rank==0)
       cout << "  2/3" <<endl;
 
-   phiprof::start("Re-initialized timers using ID");
+   phiprof::Timer reinit {"Re-initialized timers using ID"};
    for(int i=0;i<nIterations;i++){
       id_a=phiprof::initializeTimer("a","A with ID");
-      phiprof::start(id_a);
-      phiprof::stop(id_a);
+      phiprof::Timer a {id_a};
    }
-   phiprof::stop("Re-initialized timers using ID",nIterations,"start-stop");
+   reinit.stop(nIterations, "start-stop");
 
    if(rank==0)
       cout << "  3/3" <<endl;
-   phiprof::start("Timers using labels");
+   phiprof::Timer labels {"Timers using labels"};
    for(int i=0;i<nIterations;i++){
-      phiprof::start("a");
-      phiprof::stop("a");
+      phiprof::Timer a {"a"};
    }
-   phiprof::stop("Timers using labels", nIterations*2, "start-stop");
-   phiprof::stop("Benchmarking phiprof"); 
+   labels.stop(nIterations * 2, "start-stop"); // Why is it times two here?
+   benchmark.stop();
 
    MPI_Barrier(MPI_COMM_WORLD);
 
    if(rank==0)
       cout << "Measuring accuracy" <<endl;
 
-
-   phiprof::start("Test accuracy");
+   phiprof::Timer accuracy {"Test accuracy"};
 
    if(rank==0)
       cout << "  1/3" <<endl;
-   phiprof::start("100x0.01s computations"); 
+   phiprof::Timer computations {"100x0.01s computations"}; 
    for(int i=0;i<100;i++){
-      phiprof::start("compute");
+      phiprof::Timer t {"compute"};
       compute(0.01);
-      phiprof::stop("compute");
    }
-   phiprof::stop("100x0.01s computations");
+   computations.stop();
 
    if(rank==0)
       cout << "  2/3" <<endl;
    MPI_Barrier(MPI_COMM_WORLD);
 
-   phiprof::start("100 x 0.01 (threadId + 1)s, ID");
+   phiprof::Timer paraid {"100 x 0.01 (threadId + 1)s, ID"};
    int id = phiprof::initializeTimer("compute");
 #pragma omp parallel
    for(int i=0;i<100;i++){
-      phiprof::start(id);
+      phiprof::Timer t {id};
       compute(0.01 * (omp_get_thread_num() + 1));
-      phiprof::stop(id);
    }
-   phiprof::stop("100 x 0.01 (threadId + 1)s, ID"); 
+   paraid.stop();
 
    if(rank==0)
       cout << "  3/3" <<endl;
    MPI_Barrier(MPI_COMM_WORLD);
 
-   phiprof::start("100 x 0.01 (threadId + 1)s, String");
+   phiprof::Timer parastring {"100 x 0.01 (threadId + 1)s, String"};
 #pragma omp parallel
    for(int i=0;i<100;i++){
-      phiprof::start("compute");
+      phiprof::Timer t {"compute"};
       compute(0.01 * (omp_get_thread_num() + 1));
-      phiprof::stop("compute");
    }
-   phiprof::stop("100 x 0.01 (threadId + 1)s, String");
+   parastring.stop();
 
 
 
-   phiprof::stop("Test accuracy");
+   accuracy.stop();
 
    if(rank%2 == 1) {
-      
-      phiprof::start("Test-profile-groups");
-      phiprof::stop("Test-profile-groups");
+      phiprof::Timer groups {"Test-profile-groups"};
    }
    
 

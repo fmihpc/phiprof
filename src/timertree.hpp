@@ -31,6 +31,12 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include "nvToolsExt.h"
 #endif
 
+#ifdef _ROCTX
+#include "roctracer.h"
+#include "roctx.h"
+#endif
+
+
 class TimerTree {
 public:
    /**
@@ -84,6 +90,10 @@ public:
 
 #ifdef _NVTX
       nvtxRangePush(timers[id].getLabel().c_str());
+#endif
+
+#ifdef _ROCTX
+      roctxRangePush(timers[id].getLabel().c_str());
 #endif
 
       return true;
@@ -144,6 +154,9 @@ public:
 
 #ifdef _NVTX
       nvtxRangePop();
+#endif
+#ifdef _ROCTX
+      roctxRangePop();
 #endif
 
       int newId = timers[id].stop();

@@ -1,6 +1,6 @@
 # source files.
-SRC = prettyprinttable.cpp timerdata.cpp timertree.cpp paralleltimertree.cpp  phiprof.cpp phiprof_c.cpp 
-SRC_NO = nophiprof.cpp phiprof_c.cpp
+SRC = prettyprinttable.cpp timerdata.cpp timertree.cpp paralleltimertree.cpp timer.cpp phiprof.cpp phiprof_c.cpp 
+SRC_NO = nophiprof.cpp phiprof_c.cpp timer.cpp
 OBJ = $(SRC:.cpp=.o) 
 FOBJ = phiprof_fortran.o
 OBJ_NO = $(SRC_NO:.cpp=.o) 

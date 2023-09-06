@@ -130,6 +130,16 @@ bool TimerTree::stop (int id,
       return false;      
    }
 #endif
+
+#ifdef _NVTX
+   nvtxRangePop();
+#endif
+
+#ifdef _ROCTX
+   roctxRangePop();
+#endif
+
+
    int newId = timers[id].stop(workUnits);
    setCurrentId(newId);   
    return true;
@@ -144,6 +154,15 @@ bool TimerTree::stop (int id,
       return false;
    }
 #endif
+
+#ifdef _NVTX
+   nvtxRangePop();
+#endif
+
+#ifdef _ROCTX
+   roctxRangePop();
+#endif
+
    int newId = timers[id].stop(workUnits, workUnitLabel);
    setCurrentId(newId);
    return true;
@@ -159,6 +178,15 @@ bool TimerTree::stop ([[maybe_unused]] const std::string &label)
       return false;
    }
 #endif
+
+#ifdef _NVTX
+   nvtxRangePop();
+#endif
+
+#ifdef _ROCTX
+   roctxRangePop();
+#endif
+
    setCurrentId(timers[currentId[thread]].stop());
    return true;
 }
@@ -175,6 +203,15 @@ bool TimerTree::stop ([[maybe_unused]] const std::string &label,
       return false;
    }
 #endif
+
+#ifdef _NVTX
+   nvtxRangePop();
+#endif
+
+#ifdef _ROCTX
+   roctxRangePop();
+#endif
+
    setCurrentId(timers[currentId[thread]].stop(workUnits, workUnitLabel));
    return true;
 }

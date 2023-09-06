@@ -1,4 +1,3 @@
-
 # source files.
 SRC = prettyprinttable.cpp timerdata.cpp timertree.cpp paralleltimertree.cpp  phiprof.cpp phiprof_c.cpp 
 SRC_NO = nophiprof.cpp phiprof_c.cpp
@@ -11,8 +10,8 @@ OUT_STATIC_NO = ../lib/libnophiprof.a
 OUT_SHARED = ../lib/libphiprof.so
 OUT_SHARED_NO = ../lib/libnophiprof.so
 
-# Set the default compiler type (pgi, nvcc, gcc, intel, clang). Can be overriden from command-line.
-CC = hipcc
+# Set the default compiler type (pgi, nvcc, hipcc, gcc, intel, clang). Can be overriden from command-line.
+CC = gcc
 
 # compiler calls
 CCC = mpicc
@@ -42,9 +41,11 @@ else ifeq ($(CC),nvcc)
    CCFLAGS = --compiler-options -fpic -O2 -std=c++17 -DCLOCK_ID=$(CLOCK_ID)
    CCFLAGS +=  -D_NVTX -Xcompiler -fopenmp
    LDFLAGS += -lgomp -lnvToolsExt
+   CCC = OMPI_CXX='nvcc' OMPI_CXXFLAGS='' mpic++
 else ifeq ($(CC),hipcc)
    CCFLAGS =  -fpic -O2 -std=c++17 -DCLOCK_ID=$(CLOCK_ID)
-   CCFLAGS += -D_ROCTX  -fopenmp -I/opt/rocm/include/roctracer/ -I/opt/cray/pe/mpich/8.1.23/ofi/gnu/9.1/include
+   CCFLAGS += -fopenmp -xhip -D_ROCTX -I${ROCM_PATH}/include/roctracer/ -I${MPICH_DIR}/include
+   LDFLAGS += -lgomp -lroctx64 -lroctracer64
 else ifeq ($(CC),gcc)
    CCFLAGS += -fopenmp -W -Wall -Wextra -pedantic 
    LDFLAGS += -lgomp
@@ -106,8 +107,6 @@ includedir-w-fortran: includedir
 includedir: 
 	mkdir -p ../include
 	cp phiprof.hpp phiprof.h  ../include
-
-
 
 clean:
 	rm -f $(OBJ) $(FOBJ) *.mod $(OUT_STATIC) $(OBJ_NO) $(FOBJ_NO) $(OUT_STATIC_NO) $(OUT_SHARED) $(OUT_SHARED_NO) ../include/* 

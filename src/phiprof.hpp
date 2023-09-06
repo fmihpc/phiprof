@@ -167,6 +167,25 @@ namespace phiprof
     */
    bool print(MPI_Comm comm, std::string fileNamePrefix="profile");
 
+   class Timer {
+      public:
+         explicit Timer(const int id);
+         Timer(const std::string& label, const std::vector<std::string>& groups = {});
+
+         ~Timer();
+         // Rule of five
+         Timer(const Timer&) = delete;
+         Timer& operator=(const Timer&) = delete;
+         Timer(Timer&&) = default;
+         Timer& operator=(Timer&&) = delete;
+
+         bool start();
+         bool stop(const double workUnits = -1.0, const std::string& workUnitLabel = "");
+      private:
+         const int id;
+         bool active {false};
+   };
+
 }
 
 

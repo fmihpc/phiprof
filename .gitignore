@@ -9,3 +9,5 @@ nbproject
 vlasiator
 vlasiator+pat
 nbproject
+include/
+lib/

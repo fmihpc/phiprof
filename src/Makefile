@@ -10,11 +10,11 @@ OUT_STATIC_NO = ../lib/libnophiprof.a
 OUT_SHARED = ../lib/libphiprof.so
 OUT_SHARED_NO = ../lib/libnophiprof.so
 
-# Set the default compiler type (pgi, nvcc, gcc, intel, clang). Can be overriden from command-line.
+# Set the default compiler type (pgi, nvcc, hipcc, gcc, intel, clang). Can be overriden from command-line.
 CC = gcc
 
 # compiler calls
-CCC = mpicxx
+CCC = mpicc
 FTN = mpifort
 #CCC = mpic++
 #FTN = mpif90
@@ -42,6 +42,10 @@ else ifeq ($(CC),nvcc)
    CCFLAGS +=  -D_NVTX -Xcompiler -fopenmp
    LDFLAGS += -lgomp -lnvToolsExt
    CCC = OMPI_CXX='nvcc' OMPI_CXXFLAGS='' mpic++
+else ifeq ($(CC),hipcc)
+   CCFLAGS =  -fpic -O2 -std=c++17 -DCLOCK_ID=$(CLOCK_ID)
+   CCFLAGS += -fopenmp -xhip -D_ROCTX -I${ROCM_PATH}/include/roctracer/ -I${MPICH_DIR}/include
+   LDFLAGS += -lgomp -lroctx64 -lroctracer64
 else ifeq ($(CC),gcc)
    CCFLAGS += -fopenmp -W -Wall -Wextra -pedantic 
    LDFLAGS += -lgomp
